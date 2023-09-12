@@ -77,8 +77,8 @@
     }
   },
   "variables": {
-    "openApiJson": "https://raw.githubusercontent.com/paullizer/AzureOpenAI-with-APIM/main/AzureOpenAI_OpenAPI.json",
-    "openApiXml": "https://raw.githubusercontent.com/paullizer/AzureOpenAI-with-APIM/main/AzureOpenAI_Policy.xml",
+    "openApiJson": "https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AzureOpenAI_OpenAPI.json",
+    "openApiXml": "https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AzureOpenAI_Policy.xml",
     "tenantId": "[subscription().tenantId]",
     "apiNetwork": "Internal",
     "keyVaultskuName": "standard",

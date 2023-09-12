@@ -21,8 +21,8 @@ param azureOpenAiKey string
 @description('Provide the URL of the Azure Open AI service.')
 param apiServiceUrl string = 'https://InsertYourAzureOpenAiNameHere.openai.azure.com/openai'
 
-var openApiJson = 'https://raw.githubusercontent.com/paullizer/AzureOpenAI-with-APIM/main/AzureOpenAI_OpenAPI.json'
-var openApiXml = 'https://raw.githubusercontent.com/paullizer/AzureOpenAI-with-APIM/main/AzureOpenAI_Policy.xml'
+var openApiJson = 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AzureOpenAI_OpenAPI.json'
+var openApiXml = 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AzureOpenAI_Policy.xml'
 
 var tenantId = subscription().tenantId
 

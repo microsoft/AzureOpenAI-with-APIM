@@ -30,8 +30,8 @@ param apiServiceUrl string = 'https://InsertYourAzureOpenAiNameHere.openai.azure
 @description('Provide the Public IP address of the Azure Open AI service.')
 param azureOpenAiPublicIpAddress string = '000.000.000.000'
 
-var openApiJson = 'https://raw.githubusercontent.com/paullizer/AzureOpenAI-with-APIM/main/AzureOpenAI_OpenAPI.json'
-var openApiXml = 'https://raw.githubusercontent.com/paullizer/AzureOpenAI-with-APIM/main/AzureOpenAI_Policy.xml'
+var openApiJson = 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AzureOpenAI_OpenAPI.json'
+var openApiXml = 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AzureOpenAI_Policy.xml'
 
 var tenantId = subscription().tenantId
 
