@@ -1,0 +1,598 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.20.4.51522",
+      "templateHash": "16129649062926090877"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "The location into which regionally scoped resources should be deployed. Note that Front Door is a global resource."
+      }
+    },
+    "apiManagementSku": {
+      "type": "string",
+      "defaultValue": "Premium",
+      "allowedValues": [
+        "Premium",
+        "Developer"
+      ],
+      "metadata": {
+        "description": "The SKU of the API Management instance."
+      }
+    },
+    "apiManagementPublisherName": {
+      "type": "string",
+      "defaultValue": "Contoso",
+      "metadata": {
+        "description": "The name of the API publisher. This information is used by API Management."
+      }
+    },
+    "apiManagementPublisherEmail": {
+      "type": "string",
+      "defaultValue": "admin@contoso.com",
+      "metadata": {
+        "description": "The email address of the API publisher. This information is used by API Management."
+      }
+    },
+    "azureOpenAiKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Provide Key 1 for the Azure Open AI service."
+      }
+    },
+    "apiServiceUrl": {
+      "type": "string",
+      "defaultValue": "https://InsertYourAzureOpenAiNameHere.openai.azure.com/openai",
+      "metadata": {
+        "description": "Provide the URL of the Azure Open AI service."
+      }
+    }
+  },
+  "variables": {
+    "openApiJson": "https://raw.githubusercontent.com/paullizer/AzureOpenAI-with-APIM/main/AzureOpenAI_OpenAPI.json",
+    "openApiXml": "https://raw.githubusercontent.com/paullizer/AzureOpenAI-with-APIM/main/AzureOpenAI_Policy.xml",
+    "tenantId": "[subscription().tenantId]",
+    "keyVaultskuName": "standard",
+    "secretName": "aoai-api-key",
+    "keysPermissions": [
+      "list"
+    ],
+    "secretsPermissions": [
+      "list"
+    ],
+    "enabledForDeployment": false,
+    "enabledForDiskEncryption": false,
+    "enabledForTemplateDeployment": false,
+    "apiManagementSkuCount": 1,
+    "apiManagementNamedValueName": "aoai-api-key",
+    "apiName": "azure-openai-service-api",
+    "apiPath": "",
+    "apiSubscriptionName": "AzureOpenAI-Consumer-Example",
+    "apiManagementServiceName": "[format('apim-{0}', uniqueString(resourceGroup().id))]",
+    "keyVaultName": "[format('kv-{0}', uniqueString(resourceGroup().id))]",
+    "logAnalyticsName": "[format('law-{0}', uniqueString(resourceGroup().id))]",
+    "applicationInsightsName": "[format('appIn-{0}', uniqueString(resourceGroup().id))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ApiManagement/service/namedValues",
+      "apiVersion": "2021-08-01",
+      "name": "[format('{0}/{1}', variables('apiManagementServiceName'), variables('apiManagementNamedValueName'))]",
+      "properties": {
+        "displayName": "[variables('apiManagementNamedValueName')]",
+        "value": "[parameters('azureOpenAiKey')]",
+        "secret": true
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'api-management')]",
+        "[resourceId('Microsoft.Resources/deployments', 'key-vault')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "log-analytics-workspace",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "logAnalyticsName": {
+            "value": "[variables('logAnalyticsName')]"
+          },
+          "applicationInsightsName": {
+            "value": "[variables('applicationInsightsName')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.20.4.51522",
+              "templateHash": "2983539520194522060"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "logAnalyticsName": {
+              "type": "string"
+            },
+            "applicationInsightsName": {
+              "type": "string"
+            },
+            "retentionInDays": {
+              "type": "int",
+              "defaultValue": 90,
+              "minValue": 30,
+              "maxValue": 730
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2020-08-01",
+              "name": "[parameters('logAnalyticsName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "sku": {
+                  "name": "PerGB2018"
+                },
+                "retentionInDays": "[parameters('retentionInDays')]"
+              }
+            },
+            {
+              "type": "Microsoft.Insights/components",
+              "apiVersion": "2020-02-02-preview",
+              "name": "[parameters('applicationInsightsName')]",
+              "location": "[parameters('location')]",
+              "kind": "web",
+              "properties": {
+                "Application_Type": "web",
+                "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsName'))]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsName'))]"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "api-management",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "serviceName": {
+            "value": "[variables('apiManagementServiceName')]"
+          },
+          "publisherName": {
+            "value": "[parameters('apiManagementPublisherName')]"
+          },
+          "publisherEmail": {
+            "value": "[parameters('apiManagementPublisherEmail')]"
+          },
+          "skuName": {
+            "value": "[parameters('apiManagementSku')]"
+          },
+          "skuCount": {
+            "value": "[variables('apiManagementSkuCount')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.20.4.51522",
+              "templateHash": "10709026959963638243"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "The location into which the API Management resources should be deployed."
+              }
+            },
+            "serviceName": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the API Management service instance to create. This must be globally unique."
+              }
+            },
+            "publisherName": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the API publisher. This information is used by API Management."
+              }
+            },
+            "publisherEmail": {
+              "type": "string",
+              "metadata": {
+                "description": "The email address of the API publisher. This information is used by API Management."
+              }
+            },
+            "skuName": {
+              "type": "string",
+              "allowedValues": [
+                "Developer",
+                "Premium"
+              ],
+              "metadata": {
+                "description": "The name of the SKU to use when creating the API Management service instance. This must be a SKU that supports virtual network integration."
+              }
+            },
+            "skuCount": {
+              "type": "int",
+              "metadata": {
+                "description": "The number of worker instances of your API Management service that should be provisioned."
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.ApiManagement/service",
+              "apiVersion": "2023-03-01-preview",
+              "name": "[parameters('serviceName')]",
+              "location": "[parameters('location')]",
+              "sku": {
+                "name": "[parameters('skuName')]",
+                "capacity": "[parameters('skuCount')]"
+              },
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "publisherName": "[parameters('publisherName')]",
+                "publisherEmail": "[parameters('publisherEmail')]"
+              }
+            }
+          ],
+          "outputs": {
+            "apiManagementInternalIPAddress": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.ApiManagement/service', parameters('serviceName')), '2023-03-01-preview').publicIPAddresses[0]]"
+            },
+            "apiManagementIdentityPrincipalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.ApiManagement/service', parameters('serviceName')), '2023-03-01-preview', 'full').identity.principalId]"
+            },
+            "apiManagementProxyHostName": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.ApiManagement/service', parameters('serviceName')), '2023-03-01-preview').hostnameConfigurations[0].hostName]"
+            },
+            "apiManagementDeveloperPortalHostName": {
+              "type": "string",
+              "value": "[replace(reference(resourceId('Microsoft.ApiManagement/service', parameters('serviceName')), '2023-03-01-preview').developerPortalUrl, 'https://', '')]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "key-vault",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "keyVaultName": {
+            "value": "[variables('keyVaultName')]"
+          },
+          "enabledForDeployment": {
+            "value": "[variables('enabledForDeployment')]"
+          },
+          "enabledForDiskEncryption": {
+            "value": "[variables('enabledForDiskEncryption')]"
+          },
+          "enabledForTemplateDeployment": {
+            "value": "[variables('enabledForTemplateDeployment')]"
+          },
+          "tenantId": {
+            "value": "[variables('tenantId')]"
+          },
+          "objectId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'api-management'), '2022-09-01').outputs.apiManagementIdentityPrincipalId.value]"
+          },
+          "keysPermissions": {
+            "value": "[variables('keysPermissions')]"
+          },
+          "secretsPermissions": {
+            "value": "[variables('secretsPermissions')]"
+          },
+          "skuName": {
+            "value": "[variables('keyVaultskuName')]"
+          },
+          "secretName": {
+            "value": "[variables('secretName')]"
+          },
+          "secretValue": {
+            "value": "[parameters('azureOpenAiKey')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.20.4.51522",
+              "templateHash": "9351742757373124963"
+            }
+          },
+          "parameters": {
+            "keyVaultName": {
+              "type": "string",
+              "metadata": {
+                "description": "Specifies the name of the key vault."
+              }
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Specifies the Azure location where the key vault should be created."
+              }
+            },
+            "enabledForDeployment": {
+              "type": "bool",
+              "metadata": {
+                "description": "Specifies whether Azure Virtual Machines are permitted to retrieve certificates stored as secrets from the key vault."
+              }
+            },
+            "enabledForDiskEncryption": {
+              "type": "bool",
+              "metadata": {
+                "description": "Specifies whether Azure Disk Encryption is permitted to retrieve secrets from the vault and unwrap keys."
+              }
+            },
+            "enabledForTemplateDeployment": {
+              "type": "bool",
+              "metadata": {
+                "description": "Specifies whether Azure Resource Manager is permitted to retrieve secrets from the key vault."
+              }
+            },
+            "tenantId": {
+              "type": "string",
+              "metadata": {
+                "description": "Specifies the Azure Active Directory tenant ID that should be used for authenticating requests to the key vault. Get it by using Get-AzSubscription cmdlet."
+              }
+            },
+            "objectId": {
+              "type": "string",
+              "metadata": {
+                "description": "Specifies the object ID of a user, service principal or security group in the Azure Active Directory tenant for the vault. The object ID must be unique for the list of access policies. Get it by using Get-AzADUser or Get-AzADServicePrincipal cmdlets."
+              }
+            },
+            "keysPermissions": {
+              "type": "array",
+              "metadata": {
+                "description": "Specifies the permissions to keys in the vault. Valid values are: all, encrypt, decrypt, wrapKey, unwrapKey, sign, verify, get, list, create, update, import, delete, backup, restore, recover, and purge."
+              }
+            },
+            "secretsPermissions": {
+              "type": "array",
+              "metadata": {
+                "description": "Specifies the permissions to secrets in the vault. Valid values are: all, get, list, set, delete, backup, restore, recover, and purge."
+              }
+            },
+            "skuName": {
+              "type": "string"
+            },
+            "secretName": {
+              "type": "string",
+              "metadata": {
+                "description": "Specifies the name of the secret that you want to create."
+              }
+            },
+            "secretValue": {
+              "type": "securestring",
+              "metadata": {
+                "description": "Specifies the value of the secret that you want to create."
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults",
+              "apiVersion": "2021-11-01-preview",
+              "name": "[parameters('keyVaultName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "enabledForDeployment": "[parameters('enabledForDeployment')]",
+                "enabledForDiskEncryption": "[parameters('enabledForDiskEncryption')]",
+                "enabledForTemplateDeployment": "[parameters('enabledForTemplateDeployment')]",
+                "tenantId": "[parameters('tenantId')]",
+                "enableSoftDelete": true,
+                "softDeleteRetentionInDays": 90,
+                "accessPolicies": [
+                  {
+                    "objectId": "[parameters('objectId')]",
+                    "tenantId": "[parameters('tenantId')]",
+                    "permissions": {
+                      "keys": "[parameters('keysPermissions')]",
+                      "secrets": "[parameters('secretsPermissions')]"
+                    }
+                  }
+                ],
+                "sku": {
+                  "name": "[parameters('skuName')]",
+                  "family": "A"
+                },
+                "networkAcls": {
+                  "defaultAction": "Allow",
+                  "bypass": "AzureServices"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2021-11-01-preview",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), parameters('secretName'))]",
+              "properties": {
+                "value": "[parameters('secretValue')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+              ]
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'api-management')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "api",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "apimName": {
+            "value": "[variables('apiManagementServiceName')]"
+          },
+          "apiName": {
+            "value": "[variables('apiName')]"
+          },
+          "apiPath": {
+            "value": "[variables('apiPath')]"
+          },
+          "openApiJson": {
+            "value": "[variables('openApiJson')]"
+          },
+          "openApiXml": {
+            "value": "[variables('openApiXml')]"
+          },
+          "serviceUrl": {
+            "value": "[parameters('apiServiceUrl')]"
+          },
+          "apiSubscriptionName": {
+            "value": "[variables('apiSubscriptionName')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.20.4.51522",
+              "templateHash": "937226898632570735"
+            }
+          },
+          "parameters": {
+            "apimName": {
+              "type": "string"
+            },
+            "apiName": {
+              "type": "string"
+            },
+            "apiPath": {
+              "type": "string"
+            },
+            "openApiJson": {
+              "type": "string"
+            },
+            "openApiXml": {
+              "type": "string"
+            },
+            "serviceUrl": {
+              "type": "string"
+            },
+            "apiSubscriptionName": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.ApiManagement/service/apis",
+              "apiVersion": "2023-03-01-preview",
+              "name": "[format('{0}/{1}', parameters('apimName'), parameters('apiName'))]",
+              "properties": {
+                "format": "openapi+json-link",
+                "value": "[parameters('openApiJson')]",
+                "path": "[parameters('apiPath')]",
+                "serviceUrl": "[parameters('serviceUrl')]"
+              }
+            },
+            {
+              "type": "Microsoft.ApiManagement/service/apis/policies",
+              "apiVersion": "2023-03-01-preview",
+              "name": "[format('{0}/{1}/{2}', parameters('apimName'), parameters('apiName'), 'policy')]",
+              "properties": {
+                "format": "xml-link",
+                "value": "[parameters('openApiXml')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apimName'), parameters('apiName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.ApiManagement/service/subscriptions",
+              "apiVersion": "2023-03-01-preview",
+              "name": "[format('{0}/{1}', parameters('apimName'), parameters('apiSubscriptionName'))]",
+              "properties": {
+                "allowTracing": false,
+                "displayName": "[parameters('apiSubscriptionName')]",
+                "ownerId": "/users/1",
+                "scope": "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apimName'), parameters('apiName'))]",
+                "state": "active"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apimName'), parameters('apiName'))]"
+              ]
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'key-vault')]"
+      ]
+    }
+  ],
+  "outputs": {
+    "apiManagementProxyHostName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'api-management'), '2022-09-01').outputs.apiManagementProxyHostName.value]"
+    },
+    "apiManagementPortalHostName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'api-management'), '2022-09-01').outputs.apiManagementDeveloperPortalHostName.value]"
+    }
+  }
+}
