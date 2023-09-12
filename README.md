@@ -2,6 +2,8 @@
 
 ## Overview
 
+One-button deploy APIM, Keyvault, and Log Ananlytics. Auto-configure APIM to work with your Azure Open AI endpoint. 
+
 Using Azure's APIM orchestration provides a organizations with a powerful way to scale and manage their Azure Open AI service without deploying Azure Open AI endpoints everywhere. Administrators can issue subscription keys via APIM for accessing a single Azure Open AI service instead of having teams share Azure Open AI keys. APIM delivers usage metrics along with API monitoring to improve business intelligence. APIM policies control access, throttling, and a mechanism for chargeback cost models.
 
 ### Solutions
