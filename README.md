@@ -21,27 +21,40 @@ Once the service is deployed, use the following section to understand how to acc
 
 - [Steps and examples on how to use your APIM-based API to query your Azure OpenAI API](#tying-it-all-together)
 
-### Resiliency and Capacity
+### Utilization per subscription
 
-words
+- Chargeback
 
 link to further in doc
 
-### Chargeback
+### Resiliency
 
-words
+- Retry policy to leverage two or more Azure OpenAI endpoints
+- Expands capacity without impact to user experience or requesting increase to existing Azure OpenAI endpoints
 
+TBD
 
+link to further in doc
 
-### Throttling
+### Rate throttling
 
-words
+- Provide cost management per subscription
+
+link to further in doc
+
+### Load Balancer
+
+- Preview feature for two or more Azure OpenAI endpoints using round-robin load balancing
+- Pair with Resiliency for highly scalable solution
 
 link to further in doc
 
 ### Access Control
 
-words
+- Managed Identity
+- Subscription Key (aka SAS Key)
+
+link to further in doc
 
 ## Prerequisites
 
@@ -315,59 +328,66 @@ New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFil
 - Now that APIM is deployed and automatically configured to work with your Azure OpenAI service
   - [Click here to learn how do you use the APIM endpoint to interact with Azure OpenAI?](#tying-it-all-together)
 
-## Resiliency and Capacity
+## Utilization per subscription
+
+TBD
+
+Policy for collecting tokens and user id
+
+### Log Analytics workspace
+
+TBD
+
+### Event Hub
+
+TBD
+
+### PowerApps Dashboard
+
+TBD
+
+#### Demo
+
+TBD
+
+## Resiliency
 
 #### Retry Policy
 
-words, maybe other title?
+TBD
 
 [Azure API Management policy reference - retry | Microsoft Learn](https://learn.microsoft.com/en-us/azure/api-management/retry-policy)
 
 #### Multi-region
 
-words
+TBD
 
-[Ensure reliability of your Azure API Management instance - Azure API Management | Microsoft Learn](https://learn.microsoft.com/en-us/azure/api-management/high-availability)
+[Ensure reliability of your Azure API Management instance - Azure API Management | Microsoft Learn](https://learn.microsoft.com/en-us/azure/api-management/high-availability)Throttling
 
-## Chargeback
-
-words
-
-policy for collecting tokens and user id
-
-### Log Analytics workspace
-
-words
-
-### Event Hub
-
-words
-
-### PowerApps Dashboard
-
-words
-
-#### Demo
-
-words
-
-## Throttling
-
-words
+TBD
 
 [Advanced request throttling with Azure API Management | Microsoft Learn](https://learn.microsoft.com/en-us/azure/api-management/api-management-sample-flexible-throttling)
 
+## Rate throttling
+
+- Provide cost management per subscription
+
+## Load Balancer
+
+- Preview feature for two or more Azure OpenAI endpoints using round-robin load balancing
+- Pair with Resiliency for highly scalable solution
+
 ## Access Control
 
-words
+TBD
 
 ### Subscription Keys
 
-words
+TBD
 
 ### Managed Identity
 
-words
+TBD
 
 ## Tying it All together
 
