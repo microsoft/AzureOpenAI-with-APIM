@@ -21,28 +21,6 @@ Once the service is deployed, use the following section to understand how to acc
 
 - [Steps and examples on how to use your APIM-based API to query your Azure OpenAI API](#tying-it-all-together)
 
-### Resiliency and Capacity
-
-words
-
-link to further in doc
-
-### Chargeback
-
-words
-
-
-
-### Throttling
-
-words
-
-link to further in doc
-
-### Access Control
-
-words
-
 ## Prerequisites
 
 ### Azure 
