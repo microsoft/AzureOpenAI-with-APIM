@@ -30,13 +30,17 @@ resource apiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-03-01-pre
   }
 }
 
+resource adminUser 'Microsoft.ApiManagement/service/users/subscriptions@2023-05-01-preview' existing = {
+  name: '/users/1'
+}
+
 resource apiSubscription 'Microsoft.ApiManagement/service/subscriptions@2023-03-01-preview' = {
   name: apiSubscriptionName
   parent: parentAPIM
   properties: {
     allowTracing: false
     displayName: apiSubscriptionName
-    ownerId: '/users/1'
+    ownerId: adminUser.id
     scope: api.id
     state: 'active'
   }
