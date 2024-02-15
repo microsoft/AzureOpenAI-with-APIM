@@ -4,62 +4,84 @@
 
 One-button deploy APIM, Keyvault, and Log Ananlytics. Auto-configure APIM to work with your Azure OpenAI endpoint. 
 
-Using Azure's APIM orchestration provides a organizations with a powerful way to scale and manage their Azure OpenAI Service without deploying Azure OpenAI endpoints everywhere. Administrators can issue subscription keys via APIM for accessing a single Azure OpenAI Service instead of having teams share Azure OpenAI keys. APIM delivers usage metrics along with API monitoring to improve business intelligence. APIM policies control access, throttling, and a mechanism for chargeback cost models.
+Using Azure's APIM orchestration provides a organizations with a powerful way to scale and manage their Azure OpenAI service without deploying Azure OpenAI endpoints everywhere. Administrators can issue subscription keys via APIM for accessing a single Azure OpenAI service instead of having teams share Azure OpenAI keys. APIM delivers usage metrics along with API monitoring to improve business intelligence. APIM policies control access, throttling, and a mechanism for chargeback cost models.
 
-### Solutions
+## Solutions
 
 There are four solutions developed to meet the needs of the organization from a sandbox to model a production environment. 
 
-- [Azure Commercial API Management to Azure OpenAI](#azure-commercial-api-management-to-azure-open-ai)
-- [Azure Commercial API Management to Azure OpenAI with private endpoints](#azure-commercial-api-management-to-azure-open-ai-with-private-endpoints)
-- [Azure Government API Management to Azure OpenAI](#azure-government-api-management-to-azure-open-ai)
-- [Azure Government API Management to Azure OpenAI with private endpoints](#azure-government-api-management-to-azure-open-ai-with-private-endpoints)
+- [Azure Commercial API Management to Azure OpenAI](#azure-commercial-api-management-to-azure-openai)
+- [Azure Commercial API Management to Azure OpenAI with private endpoints](#azure-commercial-api-management-to-azure-openai-with-private-endpoints)
+- [Azure Government API Management to Azure OpenAI](#azure-government-api-management-to-azure-openai)
+- [Azure Government API Management to Azure OpenAI with private endpoints](#azure-government-api-management-to-azure-openai-with-private-endpoints)
 
-### Using it
+## Using it
 
-Once the service is deployed, use the following section to understand how to access your Azure OpenAI Service via APIM.
+Once the service is deployed, use the following section to understand how to access your Azure OpenAI service via APIM.
 
 - [Steps and examples on how to use your APIM-based API to query your Azure OpenAI API](#tying-it-all-together)
 
-### Prerequisites
+### Resiliency and Capacity
 
-#### Azure 
+words
+
+link to further in doc
+
+### Chargeback
+
+words
+
+
+
+### Throttling
+
+words
+
+link to further in doc
+
+### Access Control
+
+words
+
+## Prerequisites
+
+### Azure 
 
 - Contributor permissions to subscription or resource group
 - Resource Group (or ability to create)
-- Azure OpenAI Service deployed
+- Azure OpenAI service deployed
   - [How-to: Create and deploy an Azure OpenAI Service resource - Azure OpenAI | Microsoft Learn](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/create-resource?pivots=web-portal)
 
 - Azure OpenAI model deployed
   - [How-to: Create and deploy an Azure OpenAI Service resource - Azure OpenAI | Microsoft Learn](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/create-resource?pivots=web-portal#deploy-a-model)
 
-- Azure OpenAI Service URL
+- Azure OpenAI service URL
   - [Quickstart - Deploy a model and generate text using Azure OpenAI Service - Azure OpenAI | Microsoft Learn](https://learn.microsoft.com/en-us/azure/ai-services/openai/quickstart?tabs=command-line&pivots=rest-api#retrieve-key-and-endpoint)
 
 - Azure OpenAI key
   - [Quickstart - Deploy a model and generate text using Azure OpenAI Service - Azure OpenAI | Microsoft Learn](https://learn.microsoft.com/en-us/azure/ai-services/openai/quickstart?tabs=command-line&pivots=rest-api#retrieve-key-and-endpoint)
 
-- Azure OpenAI Service public IP
+- Azure OpenAI service public IP
   - ***Azure Government w/ Private Endpoint Deploy Solution Only*** 
-  - [How-to: Get the public IP address of Azure OpenAI Service](#get-public-ip-address-of-my-azure-open-ai-service)
+  - [How-to: Get the public IP address of Azure OpenAI service](#get-public-ip-address-of-my-azure-open-ai-service)
 
 
-#### One-Button
+### One-Button
 
 Each solution provides a simple one-button deployment. Select the "Deploy to Azure" button which will open the Azure portal and provide a form for details.
 
-#### Command Line
+### Command Line
 
 To use the command line deployment method, fork the library and use Codespaces or clone the forked library to your local computer.
 
 - [GitHub Codespaces](https://github.com/features/codespaces)
 
-##### Azure CLI
+#### Azure CLI
 
 - [How to install the Azure CLI | Microsoft Learn](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [Connect to Azure Government with Azure CLI - Azure Government | Microsoft Learn](https://learn.microsoft.com/en-us/azure/azure-government/documentation-government-get-started-connect-with-cli)
 
-##### Azure PowerShell
+#### Azure PowerShell
 
 - [How to install Azure PowerShell | Microsoft Learn](https://learn.microsoft.com/en-us/powershell/azure/install-azure-powershell?view=azps-10.2.0)
 - [Connect to Azure Government with PowerShell - Azure Government | Microsoft Learn](https://learn.microsoft.com/en-us/azure/azure-government/documentation-government-get-started-connect-with-ps)
@@ -135,7 +157,7 @@ New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFil
 
 #### Next steps
 
-- Now that APIM is deployed and automatically configured to work with your Azure OpenAI Service
+- Now that APIM is deployed and automatically configured to work with your Azure OpenAI service
   - [Click here to learn how do you use the APIM endpoint to interact with Azure OpenAI?](#tying-it-all-together)
 
 ### Azure Commercial API Management to Azure OpenAI with private endpoints
@@ -184,7 +206,7 @@ New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFil
 
 #### Next steps
 
-- Now that APIM is deployed and automatically configured to work with your Azure OpenAI Service
+- Now that APIM is deployed and automatically configured to work with your Azure OpenAI service
   - [Click here to learn how do you use the APIM endpoint to interact with Azure OpenAI?](#tying-it-all-together)
 
 ### Azure Government API Management to Azure OpenAI
@@ -236,7 +258,7 @@ New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFil
 
 #### Next steps
 
-- Now that APIM is deployed and automatically configured to work with your Azure OpenAI Service
+- Now that APIM is deployed and automatically configured to work with your Azure OpenAI service
   - [Click here to learn how do you use the APIM endpoint to interact with Azure OpenAI?](#tying-it-all-together)
 
 ### Azure Government API Management to Azure OpenAI with private endpoints
@@ -290,8 +312,62 @@ New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFil
 
 #### Next steps
 
-- Now that APIM is deployed and automatically configured to work with your Azure OpenAI Service
+- Now that APIM is deployed and automatically configured to work with your Azure OpenAI service
   - [Click here to learn how do you use the APIM endpoint to interact with Azure OpenAI?](#tying-it-all-together)
+
+## Resiliency and Capacity
+
+#### Retry Policy
+
+words, maybe other title?
+
+[Azure API Management policy reference - retry | Microsoft Learn](https://learn.microsoft.com/en-us/azure/api-management/retry-policy)
+
+#### Multi-region
+
+words
+
+[Ensure reliability of your Azure API Management instance - Azure API Management | Microsoft Learn](https://learn.microsoft.com/en-us/azure/api-management/high-availability)
+
+## Chargeback
+
+words
+
+policy for collecting tokens and user id
+
+### Log Analytics workspace
+
+words
+
+### Event Hub
+
+words
+
+### PowerApps Dashboard
+
+words
+
+#### Demo
+
+words
+
+## Throttling
+
+words
+
+[Advanced request throttling with Azure API Management | Microsoft Learn](https://learn.microsoft.com/en-us/azure/api-management/api-management-sample-flexible-throttling)
+
+## Access Control
+
+words
+
+### Subscription Keys
+
+words
+
+### Managed Identity
+
+words
 
 ## Tying it All together
 
@@ -313,7 +389,7 @@ To determine if you have one or more models deployed, visit the AI Studio. Here 
 
 The subscription key for APIM is collected at the Subscription section of the APIM resource, regardless if you are in Azure Commercial or Government.
 
-You can use this key for testing or as an example on how to create subscriptions to provide access to you Azure OpenAI Service. Instead of sharing your Azure OpenAI Key, you create subscriptions in APIM and share this key, then you can analyze and monitor usage, provide guardrails for usage, and manage access.
+You can use this key for testing or as an example on how to create subscriptions to provide access to you Azure OpenAI service. Instead of sharing your Azure OpenAI Key, you create subscriptions in APIM and share this key, then you can analyze and monitor usage, provide guardrails for usage, and manage access.
 
 ![Get your APIM Subscription Key](./images/get-your-apim-sub-key.png)
 
@@ -331,7 +407,7 @@ The URL for APIM is collected at the Overview section of the APIM resource, rega
 
 ### Query Examples
 
-Using your Azure OpenAI model, API version, APIM URL, and APIM subscription key you can now execute Azure OpenAI queries against your APIM URL instead of your Azure OpenAI URL. This means you can create new subscription keys for anyone or any team who needs access to Azure OpenAI instead of deploying new Azure OpenAI Services.
+Using your Azure OpenAI model, API version, APIM URL, and APIM subscription key you can now execute Azure OpenAI queries against your APIM URL instead of your Azure OpenAI URL. This means you can create new subscription keys for anyone or any team who needs access to Azure OpenAI instead of deploying new Azure OpenAI services.
 
 #### curl
 
@@ -434,14 +510,32 @@ ChatChoice choice = completions.Choices[0];
 Console.WriteLine(choice.Message.Content);
 ```
 
-### Get Public IP Address of my Azure OpenAI Service
+### Get Public IP Address of my Azure OpenAI service
 
-When deploying to Azure Government with Private endpoints, the deployment process requires the public IP address of the Azure OpenAI Service. Use ping or nslookup with fqdn of your Azure OpenAI url to determine it's public IP address.
+When deploying to Azure Government with Private endpoints, the deployment process requires the public IP address of the Azure OpenAI service. Use ping or nslookup with fqdn of your Azure OpenAI url to determine it's public IP address.
 
 - example: 
   - url is https://aoai.openai.azure.com
   - fqdn is aoai.openai.azure.com
 
-Then use nslookup in PowerShell terminal, or Linux console, along with the fqdn to find out the public IP address of your Azure OpenAI Service.
+Then use nslookup in PowerShell terminal, or Linux console, along with the fqdn to find out the public IP address of your Azure OpenAI service.
 
-![Get Public IP Address of my Azure OpenAI Service](./images/get-public-address-of-aoai.png)
+![Get Public IP Address of my Azure OpenAI service](./images/get-public-address-of-aoai.png)
+
+## SAS Key Management
+
+### Secure API SAS Key
+
+There are two methods of securely storing the SAS key
+
+#### Secure SAS Keys using APIM encrypted Name Value
+
+![APIM secure SAS internally to APIM](./images/secure-sas-key-apim-internal.png)
+
+#### Secure SAS Keys using Azure Key Vault
+
+![APIM secure SAS Key using Azure Key Vault](./images/secure-sas-key-azure-key-vault.png)
+
+### Automate API SAS Key Renewal
+
+Steps to automate updating the storage location of the SAS key following the renewal period of the SAS key.
