@@ -224,6 +224,10 @@ New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFil
 
 ### Azure Government API Management to Azure OpenAI
 
+> [!IMPORTANT]
+>
+> Update to use only use MAG
+
 Use API management deployed to the Azure Government cloud using public IP addresses for accessing APIM and for APIM to access the Azure Commercial-based Azure OpenAI API. Access to the services is secured using keys and Defender for Cloud. 
 
 Network routing from the APIM to the Azure OpenAI address uses Microsoft's backbone, eliminating public routing.
@@ -275,6 +279,10 @@ New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFil
   - [Click here to learn how do you use the APIM endpoint to interact with Azure OpenAI?](#tying-it-all-together)
 
 ### Azure Government API Management to Azure OpenAI with private endpoints
+
+> [!IMPORTANT]
+>
+> Update to only use MAG
 
 Use API management deployed to the Azure Government cloud using private IP addresses for accessing APIM and for APIM to access the Azure Commercial-based Azure OpenAI API.  
 
