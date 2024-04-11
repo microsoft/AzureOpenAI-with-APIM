@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.22.6.54827",
-      "templateHash": "10456502202723618047"
+      "templateHash": "14358552716421316681"
     }
   },
   "parameters": {
@@ -64,6 +64,13 @@
         "description": "Provide the Name of the Azure Open AI service."
       }
     },
+    "apiServiceRgPrimary": {
+      "type": "string",
+      "defaultValue": "Insert_Resource_Group_Name_Here",
+      "metadata": {
+        "description": "Provide the Resource Group Name of the Azure Open AI service."
+      }
+    },
     "azureOpenAiRegionType": {
       "type": "string",
       "defaultValue": "Single",
@@ -80,6 +87,13 @@
       "defaultValue": "Maybe-Insert_Your_Secondary_Azure_OpenAi_Name_Here",
       "metadata": {
         "description": "If you select Multi in azureOpenAiRegionType, then you must provide another Azure OpenAI Name here."
+      }
+    },
+    "apiServiceRgSecondary": {
+      "type": "string",
+      "defaultValue": "Maybe-Insert_Resource_Group_Name_Here",
+      "metadata": {
+        "description": "If you select Multi in azureOpenAiRegionType, provide the Resource Group Name of the Azure Open AI service."
       }
     },
     "enableRetryPolicy": {
@@ -621,35 +635,6 @@
         "principalId": "[reference(resourceId('Microsoft.Resources/deployments', 'api-management'), '2022-09-01').outputs.apiManagementIdentityPrincipalId.value]",
         "principalType": "ServicePrincipal",
         "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', variables('azureRoles').AzureEventHubsDataSender)]"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Resources/deployments', 'api-management')]"
-      ]
-    },
-    {
-      "type": "Microsoft.Authorization/roleAssignments",
-      "apiVersion": "2022-04-01",
-      "scope": "[format('Microsoft.EventHub/namespaces/{0}', parameters('apiServiceNamePrimary'))]",
-      "name": "[guid(subscription().id, resourceGroup().id, variables('eventHubNamespaceName'), 'Primary')]",
-      "properties": {
-        "principalId": "[reference(resourceId('Microsoft.Resources/deployments', 'api-management'), '2022-09-01').outputs.apiManagementIdentityPrincipalId.value]",
-        "principalType": "ServicePrincipal",
-        "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', variables('azureRoles').CognitiveServicesOpenAIUser)]"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Resources/deployments', 'api-management')]"
-      ]
-    },
-    {
-      "condition": "[equals(parameters('azureOpenAiRegionType'), 'Multi')]",
-      "type": "Microsoft.Authorization/roleAssignments",
-      "apiVersion": "2022-04-01",
-      "scope": "[format('Microsoft.EventHub/namespaces/{0}', parameters('apiServiceNameSecondary'))]",
-      "name": "[guid(subscription().id, resourceGroup().id, variables('eventHubNamespaceName'), 'Secondary')]",
-      "properties": {
-        "principalId": "[reference(resourceId('Microsoft.Resources/deployments', 'api-management'), '2022-09-01').outputs.apiManagementIdentityPrincipalId.value]",
-        "principalType": "ServicePrincipal",
-        "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', variables('azureRoles').CognitiveServicesOpenAIUser)]"
       },
       "dependsOn": [
         "[resourceId('Microsoft.Resources/deployments', 'api-management')]"
@@ -1808,6 +1793,140 @@
               "dependsOn": [
                 "[resourceId('Microsoft.Network/privateDnsZones', parameters('privateDnsZoneName'))]"
               ]
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'api-management')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "openAiUserPrimary",
+      "resourceGroup": "[parameters('apiServiceRgPrimary')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "roleName": {
+            "value": "[guid(subscription().id, resourceGroup().id, variables('eventHubNamespaceName'), 'Primary')]"
+          },
+          "principalId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'api-management'), '2022-09-01').outputs.apiManagementIdentityPrincipalId.value]"
+          },
+          "principalType": {
+            "value": "ServicePrincipal"
+          },
+          "roleDefinitionId": {
+            "value": "[resourceId('Microsoft.Authorization/roleDefinitions', variables('azureRoles').CognitiveServicesOpenAIUser)]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.22.6.54827",
+              "templateHash": "11824752039312146064"
+            }
+          },
+          "parameters": {
+            "roleName": {
+              "type": "string"
+            },
+            "principalId": {
+              "type": "string"
+            },
+            "principalType": {
+              "type": "string",
+              "defaultValue": "ServicePrincipal"
+            },
+            "roleDefinitionId": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[parameters('roleName')]",
+              "properties": {
+                "principalId": "[parameters('principalId')]",
+                "principalType": "[parameters('principalType')]",
+                "roleDefinitionId": "[parameters('roleDefinitionId')]"
+              }
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'api-management')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "openAiUserSecondary",
+      "resourceGroup": "[parameters('apiServiceRgSecondary')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "roleName": {
+            "value": "[guid(subscription().id, resourceGroup().id, variables('eventHubNamespaceName'), 'Primary')]"
+          },
+          "principalId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'api-management'), '2022-09-01').outputs.apiManagementIdentityPrincipalId.value]"
+          },
+          "principalType": {
+            "value": "ServicePrincipal"
+          },
+          "roleDefinitionId": {
+            "value": "[resourceId('Microsoft.Authorization/roleDefinitions', variables('azureRoles').CognitiveServicesOpenAIUser)]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.22.6.54827",
+              "templateHash": "11824752039312146064"
+            }
+          },
+          "parameters": {
+            "roleName": {
+              "type": "string"
+            },
+            "principalId": {
+              "type": "string"
+            },
+            "principalType": {
+              "type": "string",
+              "defaultValue": "ServicePrincipal"
+            },
+            "roleDefinitionId": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[parameters('roleName')]",
+              "properties": {
+                "principalId": "[parameters('principalId')]",
+                "principalType": "[parameters('principalType')]",
+                "roleDefinitionId": "[parameters('roleDefinitionId')]"
+              }
             }
           ]
         }

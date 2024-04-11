@@ -19,6 +19,9 @@ param apiManagementPublisherEmail string = 'admin@contoso.com'
 @description('Provide the Name of the Azure Open AI service.')
 param apiServiceNamePrimary string = 'Insert_Your_Azure_OpenAi_Name_Here'
 
+@description('Provide the Resource Group Name of the Azure Open AI service.')
+param apiServiceRgPrimary string = 'Insert_Resource_Group_Name_Here'
+
 @description('If you want to provide resiliency when single region exceeds quota, then select Multi and provide URL to an additional Azure OpenAI endpoint. Otherwise, maintain default entry of Single and only provide one Azure OpenAI endpoint.')
 @allowed([
   'Single'
@@ -28,6 +31,9 @@ param azureOpenAiRegionType string = 'Single'
 
 @description('If you select Multi in azureOpenAiRegionType, then you must provide another Azure OpenAI Name here.')
 param apiServiceNameSecondary string = 'Maybe-Insert_Your_Secondary_Azure_OpenAi_Name_Here'
+
+@description('If you select Multi in azureOpenAiRegionType, provide the Resource Group Name of the Azure Open AI service.')
+param apiServiceRgSecondary string = 'Maybe-Insert_Resource_Group_Name_Here'
 
 @description('If you want to enable retry policy for the API, set this to true. Otherwise, set this to false.')
 param enableRetryPolicy bool = false
@@ -141,14 +147,11 @@ resource azureEventHubsDataSender 'Microsoft.Authorization/roleAssignments@2022-
   ]
 }
 
-resource primaryAzureOpenAiParent 'Microsoft.EventHub/namespaces@2021-01-01-preview' existing = {
-  name: apiServiceNamePrimary
-}
-
-resource openAiUserPrimary 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(subscription().id, resourceGroup().id, eventHubNamespaceName, 'Primary')
-  scope: primaryAzureOpenAiParent
-  properties: {
+module openAiUserPrimary 'modules/role.bicep' = {
+  name: 'openAiUserPrimary'
+  scope: resourceGroup(apiServiceRgPrimary)
+  params: {
+    roleName: guid(subscription().id, resourceGroup().id, eventHubNamespaceName, 'Primary')
     principalId: apiManagement.outputs.apiManagementIdentityPrincipalId
     principalType: 'ServicePrincipal'
     roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', azureRoles.CognitiveServicesOpenAIUser)
@@ -158,14 +161,11 @@ resource openAiUserPrimary 'Microsoft.Authorization/roleAssignments@2022-04-01' 
   ]
 }
 
-resource secondaryAzureOpenAiParent 'Microsoft.EventHub/namespaces@2021-01-01-preview' existing = if(azureOpenAiRegionType == 'Multi'){
-  name: apiServiceNameSecondary
-}
-
-resource openAiUserSecondary 'Microsoft.Authorization/roleAssignments@2022-04-01' = if(azureOpenAiRegionType == 'Multi') {
-  name: guid(subscription().id, resourceGroup().id, eventHubNamespaceName, 'Secondary')
-  scope: secondaryAzureOpenAiParent
-  properties: {
+module openAiUserSecondary 'modules/role.bicep' = {
+  name: 'openAiUserSecondary'
+  scope: resourceGroup(apiServiceRgSecondary)
+  params: {
+    roleName: guid(subscription().id, resourceGroup().id, eventHubNamespaceName, 'Primary')
     principalId: apiManagement.outputs.apiManagementIdentityPrincipalId
     principalType: 'ServicePrincipal'
     roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', azureRoles.CognitiveServicesOpenAIUser)
