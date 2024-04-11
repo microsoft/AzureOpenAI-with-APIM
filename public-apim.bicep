@@ -134,7 +134,7 @@ resource primaryAzureOpenAiParent 'Microsoft.EventHub/namespaces@2021-01-01-prev
 }
 
 resource openAiUserPrimary 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(subscription().id, resourceGroup().id, eventHubNamespaceName)
+  name: guid(subscription().id, resourceGroup().id, eventHubNamespaceName, 'Primary')
   scope: primaryAzureOpenAiParent
   properties: {
     principalId: apiManagement.outputs.apiManagementIdentityPrincipalId
@@ -148,7 +148,7 @@ resource secondaryAzureOpenAiParent 'Microsoft.EventHub/namespaces@2021-01-01-pr
 }
 
 resource openAiUserSecondary 'Microsoft.Authorization/roleAssignments@2022-04-01' = if(azureOpenAiRegionType == 'Multi') {
-  name: guid(subscription().id, resourceGroup().id, eventHubNamespaceName)
+  name: guid(subscription().id, resourceGroup().id, eventHubNamespaceName, 'Secondary')
   scope: secondaryAzureOpenAiParent
   properties: {
     principalId: apiManagement.outputs.apiManagementIdentityPrincipalId

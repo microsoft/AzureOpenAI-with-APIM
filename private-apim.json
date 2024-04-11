@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.22.6.54827",
-      "templateHash": "14819715105204678880"
+      "templateHash": "5604790548750595208"
     }
   },
   "parameters": {
@@ -593,8 +593,8 @@
     },
     "apiServiceUrlPrimary": "[format('https://{0}.openai.azure.com/openai', parameters('apiServiceNamePrimary'))]",
     "apiServiceUrlSecondary": "[format('https://{0}.openai.azure.com/openai', parameters('apiServiceNameSecondary'))]",
-    "openApiXmlRetry": "[if(parameters('enableRetryPolicy'), 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AOAI_Policy-Managed_Identity_with_Retry_SingleRegion.xml', 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AOAI_Policy-Managed_Identity.xml')]",
-    "openApiXml": "[if(equals(parameters('azureOpenAiRegionType'), 'Multi'), 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AOAI_Policy-Managed_Identity_with_Retry_MultiRegion.xml', variables('openApiXmlRetry'))]",
+    "openApiXmlRetry": "[if(parameters('enableRetryPolicy'), 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/apim_policies/AOAI_Policy-Managed_Identity_with_Retry_SingleRegion.xml', 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/apim_policies/AOAI_Policy-Managed_Identity.xml')]",
+    "openApiXml": "[if(equals(parameters('azureOpenAiRegionType'), 'Multi'), 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/apim_policies/AOAI_Policy-Managed_Identity_with_Retry_MultiRegion.xml', variables('openApiXmlRetry'))]",
     "openApiJson": "https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AzureOpenAI_OpenAPI.json",
     "apiNetwork": "Internal",
     "apiManagementSkuCount": 1,
@@ -629,7 +629,7 @@
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2022-04-01",
       "scope": "[format('Microsoft.EventHub/namespaces/{0}', parameters('apiServiceNamePrimary'))]",
-      "name": "[guid(subscription().id, resourceGroup().id, variables('eventHubNamespaceName'))]",
+      "name": "[guid(subscription().id, resourceGroup().id, variables('eventHubNamespaceName'), 'Primary')]",
       "properties": {
         "principalId": "[reference(resourceId('Microsoft.Resources/deployments', 'api-management'), '2022-09-01').outputs.apiManagementIdentityPrincipalId.value]",
         "principalType": "ServicePrincipal",
@@ -644,7 +644,7 @@
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2022-04-01",
       "scope": "[format('Microsoft.EventHub/namespaces/{0}', parameters('apiServiceNamePrimary'))]",
-      "name": "[guid(subscription().id, resourceGroup().id, variables('eventHubNamespaceName'))]",
+      "name": "[guid(subscription().id, resourceGroup().id, variables('eventHubNamespaceName'), 'Secondary')]",
       "properties": {
         "principalId": "[reference(resourceId('Microsoft.Resources/deployments', 'api-management'), '2022-09-01').outputs.apiManagementIdentityPrincipalId.value]",
         "principalType": "ServicePrincipal",

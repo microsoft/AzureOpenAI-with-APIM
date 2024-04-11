@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.22.6.54827",
-      "templateHash": "17869801289975994225"
+      "templateHash": "17485085602619164309"
     }
   },
   "parameters": {
@@ -612,7 +612,7 @@
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2022-04-01",
       "scope": "[format('Microsoft.EventHub/namespaces/{0}', parameters('apiServiceNamePrimary'))]",
-      "name": "[guid(subscription().id, resourceGroup().id, variables('eventHubNamespaceName'))]",
+      "name": "[guid(subscription().id, resourceGroup().id, variables('eventHubNamespaceName'), 'Primary')]",
       "properties": {
         "principalId": "[reference(resourceId('Microsoft.Resources/deployments', 'api-management'), '2022-09-01').outputs.apiManagementIdentityPrincipalId.value]",
         "principalType": "ServicePrincipal",
@@ -627,7 +627,7 @@
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2022-04-01",
       "scope": "[format('Microsoft.EventHub/namespaces/{0}', parameters('apiServiceNamePrimary'))]",
-      "name": "[guid(subscription().id, resourceGroup().id, variables('eventHubNamespaceName'))]",
+      "name": "[guid(subscription().id, resourceGroup().id, variables('eventHubNamespaceName'), 'Secondary')]",
       "properties": {
         "principalId": "[reference(resourceId('Microsoft.Resources/deployments', 'api-management'), '2022-09-01').outputs.apiManagementIdentityPrincipalId.value]",
         "principalType": "ServicePrincipal",
