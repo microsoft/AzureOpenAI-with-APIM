@@ -432,6 +432,8 @@ Copy and paste this script into a text editor or Visual Studio code (VSC).
 
 Modify by including your values, then copy and paste all of it into PowerShell 7 terminal or run from VSC.
 
+- [Link to example.ps1 file in the repo](https://github.com/microsoft/AzureOpenAI-with-APIM/blob/main/example_code/example.ps1)
+
 > [!NOTE]
 >
 > Modify the "CONTENT" line for the system role and the user role to support your development and testing.
@@ -481,6 +483,8 @@ $response.choices.message.content
 Copy and paste this script into a text editor or Visual Studio code.
 
 Modify by including your values, then copy and paste all of it into bash terminal, run from VSC, or create a ".sh" file to run.
+
+- [Link  to example.sh file in the repo](https://github.com/microsoft/AzureOpenAI-with-APIM/blob/main/example_code/example.sh)
 
 > [!NOTE]
 >
