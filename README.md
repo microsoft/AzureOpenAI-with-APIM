@@ -426,21 +426,25 @@ Using your Azure OpenAI model, API version, APIM URL, and APIM subscription key 
 
 #### curl
 
-##### Windows PowerShell 7
+##### PowerShell 7
 
 Copy and paste this script into a text editor or Visual Studio code (VSC).
 
 Modify by including your values, then copy and paste all of it into PowerShell 7 terminal or run from VSC.
 
+> [!NOTE]
+>
+> Modify the "CONTENT" line for the system role and the user role to support your development and testing.
+
 ```powershell
 # Update these values to match your environment
 $apimUrl = 'THE_HTTPS_URL_OF_YOUR_APIM_INSTANCE'
-$modelName = 'GPT-4'
+$deploymentName = 'DEPLOYMENT_NAME'
 $apiVersion = '2024-02-15-preview'
 $subscriptionKey = 'YOUR_APIM_SUBSCRIPTION_KEY'
 
 # Construct the URL
-$url = "$apimUrl/deployments/$modelName/chat/completions?api-version=$apiVersion"
+$url = "$apimUrl/deployments/$deploymentName/chat/completions?api-version=$apiVersion"
 
 # Headers
 $headers = @{
@@ -472,20 +476,26 @@ $response = Invoke-RestMethod -Uri $url -Method Post -Headers $headers -Body $bo
 $response.choices.message.content
 ```
 
-##### Linux
+##### Bash
 
 Copy and paste this script into a text editor or Visual Studio code.
 
 Modify by including your values, then copy and paste all of it into bash terminal, run from VSC, or create a ".sh" file to run.
 
+> [!NOTE]
+>
+> Modify the "CONTENT" line for the system role and the user role to support your development and testing.
+
+
+
 ```bash
 #!/bin/bash
 apimUrl="THE_HTTPS_URL_OF_YOUR_APIM_INSTANCE"
-modelName="GPT-4" # Probaby what you named your model, but change if necessary
+deploymentName="DEPLOYHMENT_NAME" # Probaby what you named your model, but change if necessary
 apiVersion="2024-02-15-preview" # Change to use the latest version
 subscriptionKey="YOUR_APIM_SUBSCRIPTION_KEY"
 
-url="${apimUrl}/deployments/${modelName}/chat/completions?api-version=${apiVersion}"
+url="${apimUrl}/deployments/${deploymentName}/chat/completions?api-version=${apiVersion}"
 key="Ocp-Apim-Subscription-Key: ${subscriptionKey}"
 
 # JSON payload
@@ -509,11 +519,13 @@ curl "${url}" -H "Content-Type: application/json" -H "${key}" -d "${jsonPayload}
 
 ```
 
-
-
 #### .net
 
 You will most likely be using Visual Studio 202x to run this and you know what you are doing.
+
+> [!NOTE]
+>
+> Modify the "ChatMessage" lines for the system role and the user role to support your development and testing.
 
 ```c#
 // Note: The Azure OpenAI client library for .NET is in preview.
@@ -522,7 +534,7 @@ using Azure;
 using Azure.AI.OpenAI;
 
 OpenAIClient client = new OpenAIClient(
-	new Uri("https://INSERT_APIM_URL_HERE/deployments/INSERT_MODEL_NAME_HERE/chat/completions?api-version=INSERT_API_VERSION_HERE"),
+	new Uri("https://INSERT_APIM_URL_HERE/deployments/INSERT_DEPLOYMENT_NAME_HERE/chat/completions?api-version=INSERT_API_VERSION_HERE"),
 	new AzureKeyCredential("INSERT_APIM_SUBSCRIPTION_KEY_HERE"));
 
 // ### If streaming is not selected
@@ -547,26 +559,6 @@ ChatCompletions completions = responseWithoutStream.Value;
 ChatChoice choice = completions.Choices[0];
 Console.WriteLine(choice.Message.Content);
 ```
-
-## SAS Key Management
-
-### Secure API SAS Key
-
-There are two methods of securely storing the SAS key
-
-#### Secure SAS Keys using APIM encrypted Name Value
-
-![APIM secure SAS internally to APIM](./images/secure-sas-key-apim-internal.png)
-
-#### Secure SAS Keys using Azure Key Vault
-
-![APIM secure SAS Key using Azure Key Vault](./images/secure-sas-key-azure-key-vault.png)
-
-### Automate API SAS Key Renewal
-
-Steps to automate updating the storage location of the SAS key following the renewal period of the SAS key.
-
-
 
 ## References
 
