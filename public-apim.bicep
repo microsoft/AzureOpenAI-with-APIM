@@ -5,8 +5,10 @@ param location string = resourceGroup().location
 @allowed([
   'Premium'
   'Developer'
+  'BasicV2'
+  'StandardV2'
 ])
-param apiManagementSku string = 'Premium'
+param apiManagementSku string = 'Developer'
 
 @description('The name of the API publisher. This information is used by API Management.')
 param apiManagementPublisherName string = 'Contoso'
@@ -14,44 +16,68 @@ param apiManagementPublisherName string = 'Contoso'
 @description('The email address of the API publisher. This information is used by API Management.')
 param apiManagementPublisherEmail string = 'admin@contoso.com'
 
-@description('Provide Key 1 for the Azure Open AI service.')
-@secure()
-param azureOpenAiKey string
+@description('Provide the Name of the Azure Open AI service.')
+param apiServiceNamePrimary string = 'Insert_Your_Azure_OpenAi_Name_Here'
 
-@description('Provide the URL of the Azure Open AI service.')
-param apiServiceUrl string = 'https://InsertYourAzureOpenAiNameHere.openai.azure.com/openai'
+@description('If you want to provide resiliency when single region exceeds quota, then select Multi and provide URL to an additional Azure OpenAI endpoint. Otherwise, maintain default entry of Single and only provide one Azure OpenAI endpoint.')
+@allowed([
+  'Single'
+  'Multi'
+])
+param azureOpenAiRegionType string = 'Single'
+
+@description('If you select Multi in azureOpenAiRegionType, then you must provide another Azure OpenAI Name here.')
+param apiServiceNameSecondary string = 'Maybe-Insert_Your_Secondary_Azure_OpenAi_Name_Here'
+
+@description('If you want to enable retry policy for the API, set this to true. Otherwise, set this to false.')
+param enableRetryPolicy bool = false
+
+var apiServiceUrlPrimary = 'https://${apiServiceNamePrimary}.openai.azure.com/openai'
+var apiServiceUrlSecondary = 'https://${apiServiceNameSecondary}.openai.azure.com/openai'
+
+// The following logic is used to determine the OpenAPI XML policy file to use based on the region type and retry policy setting.
+var openApiXmlRetry = enableRetryPolicy ? 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AOAI_Policy-Managed_Identity_with_Retry_SingleRegion.xml' : 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AOAI_Policy-Managed_Identity.xml'
+var openApiXml = azureOpenAiRegionType == 'Multi' ? 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AOAI_Policy-Managed_Identity_with_Retry_MultiRegion.xml' : openApiXmlRetry
 
 var openApiJson = 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AzureOpenAI_OpenAPI.json'
-var openApiXml = 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AzureOpenAI_Policy.xml'
-
-var tenantId = subscription().tenantId
-
-var keyVaultskuName = 'standard'
-var secretName = 'aoai-api-key'
-var keysPermissions = ['list']
-var secretsPermissions = ['list']
-var enabledForDeployment = false
-var enabledForDiskEncryption = false
-var enabledForTemplateDeployment = false
 
 var apiManagementSkuCount = 1
-var apiManagementNamedValueName = 'aoai-api-key'
 
 var apiName = 'azure-openai-service-api'
 var apiPath = ''
-var apiSubscriptionName = 'AzureOpenAI-Consumer-Example'
+var apiSubscriptionName = 'AzureOpenAI-Consumer-Chat'
 
-var apiManagementServiceName = 'apim-${uniqueString(resourceGroup().id)}'
-var keyVaultName = 'kv-${uniqueString(resourceGroup().id)}'
-var logAnalyticsName = 'law-${uniqueString(resourceGroup().id)}'
-var applicationInsightsName = 'appIn-${uniqueString(resourceGroup().id)}'
+var unique = uniqueString(resourceGroup().id, subscription().id)
+var apiManagementServiceName = 'apim-${unique}'
+var logAnalyticsName = 'law-${unique}'
+var eventHubName = 'eh-${unique}'
+var eventHubNamespaceName = 'ehn-${unique}'
+var applicationInsightsName = 'appIn-${unique}'
+
+var azureRoles = loadJsonContent('azure_roles.json')
 
 module logAnalyticsWorkspace 'modules/log-analytics-workspace.bicep' = {
   name: 'log-analytics-workspace'
   params: {
     location: location
     logAnalyticsName: logAnalyticsName
-    applicationInsightsName : applicationInsightsName
+  }
+}
+
+module eventHub 'modules/event-hub.bicep' = {
+  name: 'event-hub'
+  params: {
+    location: location
+    eventHubNamespaceName: eventHubNamespaceName
+    eventHubName: eventHubName
+  }
+}
+
+module applicationInsights 'modules/app-insights.bicep' = {
+  name: 'application-insights'
+  params: {
+    location: location
+    applicationInsightsName: applicationInsightsName
   }
 }
 
@@ -64,44 +90,9 @@ module apiManagement 'modules/api-management.bicep' = {
     publisherEmail: apiManagementPublisherEmail
     skuName: apiManagementSku
     skuCount: apiManagementSkuCount
-  }
-}
-
-module keyVault 'modules/key-vault.bicep' = {
-  name: 'key-vault'
-  params: {
-    location: location
-    keyVaultName: keyVaultName
-    enabledForDeployment: enabledForDeployment
-    enabledForDiskEncryption: enabledForDiskEncryption
-    enabledForTemplateDeployment: enabledForTemplateDeployment
-    tenantId: tenantId
-    objectId: apiManagement.outputs.apiManagementIdentityPrincipalId
-    keysPermissions: keysPermissions
-    secretsPermissions: secretsPermissions
-    skuName: keyVaultskuName
-    secretName: secretName
-    secretValue: azureOpenAiKey
-  }
-  dependsOn: [
-    apiManagement
-  ]
-}
-
-resource apiManagementService 'Microsoft.ApiManagement/service@2021-08-01' existing = {
-  name: apiManagementServiceName
-
-  resource namedValue 'namedValues' = {
-    name: apiManagementNamedValueName
-    dependsOn: [
-      apiManagement
-      keyVault
-    ]
-    properties: {
-      displayName: apiManagementNamedValueName
-      value: azureOpenAiKey
-      secret: true
-    }
+    aiName: applicationInsightsName
+    eventHubName: eventHubName
+    eventHubNamespaceName: eventHubNamespaceName
   }
 }
 
@@ -113,13 +104,57 @@ module api 'modules/api.bicep' = {
     apiPath: apiPath
     openApiJson : openApiJson
     openApiXml : openApiXml
-    serviceUrl: apiServiceUrl
+    serviceUrlPrimary : apiServiceUrlPrimary
+    serviceUrlSecondary: apiServiceUrlSecondary
+    azureOpenAiRegionType: azureOpenAiRegionType
     apiSubscriptionName: apiSubscriptionName
+    aiLoggerId: apiManagement.outputs.aiLoggerId
   }
   dependsOn: [
-    keyVault
-    apiManagementService
+    apiManagement
   ]
+}
+
+resource eventHubNamespaceParent 'Microsoft.EventHub/namespaces@2021-01-01-preview' existing = {
+  name: eventHubNamespaceName
+}
+
+resource azureEventHubsDataSender 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(subscription().id, resourceGroup().id, eventHubNamespaceName)
+  scope: eventHubNamespaceParent
+  properties: {
+    principalId: apiManagement.outputs.apiManagementIdentityPrincipalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', azureRoles.AzureEventHubsDataSender)
+  }
+}
+
+resource primaryAzureOpenAiParent 'Microsoft.EventHub/namespaces@2021-01-01-preview' existing = {
+  name: apiServiceNamePrimary
+}
+
+resource openAiUserPrimary 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(subscription().id, resourceGroup().id, eventHubNamespaceName)
+  scope: primaryAzureOpenAiParent
+  properties: {
+    principalId: apiManagement.outputs.apiManagementIdentityPrincipalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', azureRoles.CognitiveServicesOpenAIUser)
+  }
+}
+
+resource secondaryAzureOpenAiParent 'Microsoft.EventHub/namespaces@2021-01-01-preview' existing = if(azureOpenAiRegionType == 'Multi'){
+  name: apiServiceNamePrimary
+}
+
+resource openAiUserSecondary 'Microsoft.Authorization/roleAssignments@2022-04-01' = if(azureOpenAiRegionType == 'Multi') {
+  name: guid(subscription().id, resourceGroup().id, eventHubNamespaceName)
+  scope: secondaryAzureOpenAiParent
+  properties: {
+    principalId: apiManagement.outputs.apiManagementIdentityPrincipalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', azureRoles.CognitiveServicesOpenAIUser)
+  }
 }
 
 output apiManagementProxyHostName string = apiManagement.outputs.apiManagementProxyHostName

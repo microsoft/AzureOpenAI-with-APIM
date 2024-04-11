@@ -82,3 +82,5 @@ resource emailActionGroup 'microsoft.insights/actionGroups@2019-06-01' = {
     ]
   }
 }
+
+output aiId string = applicationInsights.id

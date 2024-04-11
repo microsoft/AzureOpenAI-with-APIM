@@ -1,0 +1,43 @@
+<policies>
+    <inbound>
+        <base />
+        <set-backend-service backend-id="aoai-primary-backend" />
+        <authentication-managed-identity resource="https://cognitiveservices.azure.com" />
+        <!-- Apply rate limiting -->
+        <rate-limit-by-key calls="1"
+            renewal-period="60"
+            counter-key="@(context.Request.Headers.GetValueOrDefault(" Authorization","").AsJwt()?.Subject)"
+            remaining-calls-variable-name="remainingCallsPerSubscription" />
+
+        <choose>
+            <when condition="@((int)context.Variables['remainingCallsPerSubscription'] == 0)">
+                <return-response>
+                    <set-status code="429" reason="Too Many Requests" />
+                    <set-header name="X-Rate-Limit-Retry-After-Seconds" exists-action="override">
+                        <value>60</value> <!-- Adjust the value based on your rate limit reset time -->
+                    </set-header>
+                </return-response>
+            </when>
+        </choose>
+    </inbound>
+    <backend>
+        <retry
+            condition="@(context.Response.StatusCode == 429 || context.Response.StatusCode >= 500)"
+            count="5" interval="1" delta="1" max-interval="8" first-fast-retry="false">
+            <!-- Failover logic below - uncomment to retry on secondary backend -->
+            <choose>
+                <when
+                    condition="@(context.Response.StatusCode == 429 || context.Response.StatusCode >= 500)">
+                    <set-backend-service backend-id="aoai-secondary-backend" />
+                </when>
+            </choose>
+            <forward-request buffer-request-body="true" />
+        </retry>
+    </backend>
+    <outbound>
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>
