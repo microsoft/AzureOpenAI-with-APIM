@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.22.6.54827",
-      "templateHash": "7839809093541222971"
+      "templateHash": "12783305828211419178"
     }
   },
   "parameters": {
@@ -954,7 +954,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.22.6.54827",
-              "templateHash": "1022313258142628123"
+              "templateHash": "12128798988084540237"
             }
           },
           "parameters": {
@@ -1037,23 +1037,6 @@
               "dependsOn": [
                 "[resourceId('Microsoft.ApiManagement/service', parameters('serviceName'))]"
               ]
-            },
-            {
-              "type": "Microsoft.ApiManagement/service/loggers",
-              "apiVersion": "2022-04-01-preview",
-              "name": "[format('{0}/{1}', parameters('serviceName'), 'ContosoLogger1')]",
-              "properties": {
-                "loggerType": "azureEventHub",
-                "description": "Event hub logger with system-assigned managed identity",
-                "credentials": {
-                  "endpointAddress": "[format('{0}.servicebus.windows.net', parameters('eventHubNamespaceName'))]",
-                  "identityClientId": "systemAssigned",
-                  "name": "[parameters('eventHubName')]"
-                }
-              },
-              "dependsOn": [
-                "[resourceId('Microsoft.ApiManagement/service', parameters('serviceName'))]"
-              ]
             }
           ],
           "outputs": {
@@ -1076,10 +1059,6 @@
             "aiLoggerId": {
               "type": "string",
               "value": "[resourceId('Microsoft.ApiManagement/service/loggers', parameters('serviceName'), 'aiLoggerWithSystemAssignedIdentity')]"
-            },
-            "ehLoggerId": {
-              "type": "string",
-              "value": "[resourceId('Microsoft.ApiManagement/service/loggers', parameters('serviceName'), 'ContosoLogger1')]"
             }
           }
         }

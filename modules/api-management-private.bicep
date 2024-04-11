@@ -28,7 +28,7 @@ param subnetResourceId string
 resource aiParent 'Microsoft.Insights/components@2020-02-02-preview' existing = {
   name: aiName
 }
-resource apiManagementServiceVnetIntegration 'Microsoft.ApiManagement/service@2023-03-01-preview' = {
+resource apiManagementService 'Microsoft.ApiManagement/service@2023-03-01-preview' = {
   name: serviceName
   location: location
   sku: {
@@ -50,7 +50,7 @@ resource apiManagementServiceVnetIntegration 'Microsoft.ApiManagement/service@20
 
 resource aiLoggerWithSystemAssignedIdentity 'Microsoft.ApiManagement/service/loggers@2022-08-01' = {
   name: 'aiLoggerWithSystemAssignedIdentity'
-  parent: apiManagementServiceVnetIntegration
+  parent: apiManagementService
   properties: {
     loggerType: 'applicationInsights'
     description: 'Application Insights logger with connection string'
@@ -61,23 +61,8 @@ resource aiLoggerWithSystemAssignedIdentity 'Microsoft.ApiManagement/service/log
   }
 }
 
-resource ehLoggerWithSystemAssignedIdentity 'Microsoft.ApiManagement/service/loggers@2022-04-01-preview' = {
-  name: 'ContosoLogger1'
-  parent: apiManagementServiceVnetIntegration
-  properties: {
-    loggerType: 'azureEventHub'
-    description: 'Event hub logger with system-assigned managed identity'
-    credentials: {
-      endpointAddress: '${eventHubNamespaceName}.servicebus.windows.net'
-      identityClientId: 'systemAssigned'
-      name: eventHubName
-    }
-  }
-}
-
-output apiManagementInternalIPAddress string = apiManagementServiceVnetIntegration.properties.publicIPAddresses[0]
-output apiManagementIdentityPrincipalId string = apiManagementServiceVnetIntegration.identity.principalId
-output apiManagementProxyHostName string = apiManagementServiceVnetIntegration.properties.hostnameConfigurations[0].hostName
-output apiManagementDeveloperPortalHostName string = replace(apiManagementServiceVnetIntegration.properties.developerPortalUrl, 'https://', '')
+output apiManagementInternalIPAddress string = apiManagementService.properties.publicIPAddresses[0]
+output apiManagementIdentityPrincipalId string = apiManagementService.identity.principalId
+output apiManagementProxyHostName string = apiManagementService.properties.hostnameConfigurations[0].hostName
+output apiManagementDeveloperPortalHostName string = replace(apiManagementService.properties.developerPortalUrl, 'https://', '')
 output aiLoggerId string = aiLoggerWithSystemAssignedIdentity.id
-output ehLoggerId string = ehLoggerWithSystemAssignedIdentity.id

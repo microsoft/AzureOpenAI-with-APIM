@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.22.6.54827",
-      "templateHash": "11404057050993623154"
+      "templateHash": "5885153030502193822"
     }
   },
   "parameters": {
@@ -1318,7 +1318,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.22.6.54827",
-              "templateHash": "1547649252959244563"
+              "templateHash": "13447205872548839196"
             }
           },
           "parameters": {
@@ -1411,23 +1411,6 @@
               "dependsOn": [
                 "[resourceId('Microsoft.ApiManagement/service', parameters('serviceName'))]"
               ]
-            },
-            {
-              "type": "Microsoft.ApiManagement/service/loggers",
-              "apiVersion": "2022-04-01-preview",
-              "name": "[format('{0}/{1}', parameters('serviceName'), 'ContosoLogger1')]",
-              "properties": {
-                "loggerType": "azureEventHub",
-                "description": "Event hub logger with system-assigned managed identity",
-                "credentials": {
-                  "endpointAddress": "[format('{0}.servicebus.windows.net', parameters('eventHubNamespaceName'))]",
-                  "identityClientId": "systemAssigned",
-                  "name": "[parameters('eventHubName')]"
-                }
-              },
-              "dependsOn": [
-                "[resourceId('Microsoft.ApiManagement/service', parameters('serviceName'))]"
-              ]
             }
           ],
           "outputs": {
@@ -1450,10 +1433,6 @@
             "aiLoggerId": {
               "type": "string",
               "value": "[resourceId('Microsoft.ApiManagement/service/loggers', parameters('serviceName'), 'aiLoggerWithSystemAssignedIdentity')]"
-            },
-            "ehLoggerId": {
-              "type": "string",
-              "value": "[resourceId('Microsoft.ApiManagement/service/loggers', parameters('serviceName'), 'ContosoLogger1')]"
             }
           }
         }
