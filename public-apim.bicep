@@ -144,7 +144,7 @@ resource openAiUserPrimary 'Microsoft.Authorization/roleAssignments@2022-04-01' 
 }
 
 resource secondaryAzureOpenAiParent 'Microsoft.EventHub/namespaces@2021-01-01-preview' existing = if(azureOpenAiRegionType == 'Multi'){
-  name: apiServiceNamePrimary
+  name: apiServiceNameSecondary
 }
 
 resource openAiUserSecondary 'Microsoft.Authorization/roleAssignments@2022-04-01' = if(azureOpenAiRegionType == 'Multi') {

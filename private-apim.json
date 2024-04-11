@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.22.6.54827",
-      "templateHash": "5604790548750595208"
+      "templateHash": "13270594813237482462"
     }
   },
   "parameters": {
@@ -91,7 +91,7 @@
     }
   },
   "variables": {
-    "azureRoles": {
+    "$fxv#0": {
       "AccessReviewOperatorServiceRole": "76cc9ee4-d5d3-4a45-a930-26add3d73475",
       "AcrDelete": "c2f4ef07-c644-48eb-af81-4b1b4947fb11",
       "AcrImageSigner": "6cef56e8-d556-48e5-a04f-b8e64114680f",
@@ -608,7 +608,8 @@
     "eventHubName": "[format('eh-{0}', variables('unique'))]",
     "eventHubNamespaceName": "[format('ehn-{0}', variables('unique'))]",
     "applicationInsightsName": "[format('appIn-{0}', variables('unique'))]",
-    "privateDnsZoneName": "azure-api.net"
+    "privateDnsZoneName": "azure-api.net",
+    "azureRoles": "[variables('$fxv#0')]"
   },
   "resources": [
     {
@@ -643,7 +644,7 @@
       "condition": "[equals(parameters('azureOpenAiRegionType'), 'Multi')]",
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2022-04-01",
-      "scope": "[format('Microsoft.EventHub/namespaces/{0}', parameters('apiServiceNamePrimary'))]",
+      "scope": "[format('Microsoft.EventHub/namespaces/{0}', parameters('apiServiceNameSecondary'))]",
       "name": "[guid(subscription().id, resourceGroup().id, variables('eventHubNamespaceName'), 'Secondary')]",
       "properties": {
         "principalId": "[reference(resourceId('Microsoft.Resources/deployments', 'api-management'), '2022-09-01').outputs.apiManagementIdentityPrincipalId.value]",
