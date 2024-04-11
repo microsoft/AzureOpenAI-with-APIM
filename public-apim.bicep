@@ -77,6 +77,7 @@ module applicationInsights 'modules/app-insights.bicep' = {
   name: 'application-insights'
   params: {
     location: location
+    workspaceName: logAnalyticsName
     applicationInsightsName: applicationInsightsName
   }
 }

@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.22.6.54827",
-      "templateHash": "13270594813237482462"
+      "templateHash": "11404057050993623154"
     }
   },
   "parameters": {
@@ -815,6 +815,9 @@
           "location": {
             "value": "[parameters('location')]"
           },
+          "workspaceName": {
+            "value": "[variables('logAnalyticsName')]"
+          },
           "applicationInsightsName": {
             "value": "[variables('applicationInsightsName')]"
           }
@@ -826,56 +829,28 @@
             "_generator": {
               "name": "bicep",
               "version": "0.22.6.54827",
-              "templateHash": "5984073464240257919"
+              "templateHash": "10482529623021130956"
             }
           },
           "parameters": {
             "responseTimeThreshold": {
               "type": "int",
-              "defaultValue": 3,
-              "minValue": 1,
-              "maxValue": 10000,
-              "metadata": {
-                "description": "Enter response time threshold in seconds."
-              }
+              "defaultValue": 3
             },
             "workspaceName": {
-              "type": "string",
-              "defaultValue": "myWorkspace",
-              "metadata": {
-                "description": "Name of the workspace where the data will be stored."
-              }
+              "type": "string"
             },
             "applicationInsightsName": {
-              "type": "string",
-              "defaultValue": "myApplicationInsights",
-              "metadata": {
-                "description": "Name of the application insights resource."
-              }
+              "type": "string"
             },
             "location": {
-              "type": "string",
-              "defaultValue": "[resourceGroup().location]",
-              "metadata": {
-                "description": "Location for all resources."
-              }
+              "type": "string"
             }
           },
           "variables": {
             "responseAlertName": "[format('ResponseTime-{0}', toLower(parameters('applicationInsightsName')))]"
           },
           "resources": [
-            {
-              "type": "Microsoft.OperationalInsights/workspaces",
-              "apiVersion": "2020-10-01",
-              "name": "[parameters('workspaceName')]",
-              "location": "[parameters('location')]",
-              "properties": {
-                "sku": {
-                  "name": "Free"
-                }
-              }
-            },
             {
               "type": "Microsoft.Insights/components",
               "apiVersion": "2020-02-02-preview",
@@ -885,10 +860,7 @@
               "properties": {
                 "Application_Type": "web",
                 "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
-              },
-              "dependsOn": [
-                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
-              ]
+              }
             },
             {
               "type": "Microsoft.Insights/metricAlerts",
@@ -953,10 +925,7 @@
             }
           }
         }
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Resources/deployments', 'log-analytics-workspace')]"
-      ]
+      }
     },
     {
       "type": "Microsoft.Resources/deployments",

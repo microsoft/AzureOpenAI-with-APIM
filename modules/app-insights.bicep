@@ -1,27 +1,12 @@
-@description('Enter response time threshold in seconds.')
-@minValue(1)
-@maxValue(10000)
 param responseTimeThreshold int = 3
-
-@description('Name of the workspace where the data will be stored.')
-param workspaceName string = 'myWorkspace'
-
-@description('Name of the application insights resource.')
-param applicationInsightsName string = 'myApplicationInsights'
-
-@description('Location for all resources.')
-param location string = resourceGroup().location
+param workspaceName string
+param applicationInsightsName string
+param location string
 
 var responseAlertName = 'ResponseTime-${toLower(applicationInsightsName)}'
 
-resource workspace 'Microsoft.OperationalInsights/workspaces@2020-10-01' = {
+resource workspace 'Microsoft.OperationalInsights/workspaces@2020-10-01' existing =  {
   name: workspaceName
-  location: location
-  properties: {
-    sku: {
-      name: 'Free'
-    }
-  }
 }
 
 resource applicationInsights 'Microsoft.Insights/components@2020-02-02-preview' = {
