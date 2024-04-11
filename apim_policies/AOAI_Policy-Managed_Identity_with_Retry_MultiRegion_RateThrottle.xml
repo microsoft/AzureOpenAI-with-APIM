@@ -5,19 +5,19 @@
         <authentication-managed-identity resource="https://cognitiveservices.azure.com" />
         <!-- Apply rate limiting -->
         <choose>
-            <!-- If Subscription A -->
-            <when condition="@(context.User.Id == '1')">
+            <!-- If User A associated with the Subscription used to authorize access -->
+            <when condition="@(context.User.Id == "1")">
                 <rate-limit-by-key calls="5" renewal-period="60"
                                    counter-key="@(context.User.Id)"
                                    remaining-calls-variable-name="remainingCallsPerSubscriptionA" />
             </when>
-            <!-- If Subscription B -->
-            <when condition="@(context.User.Id == '2')">
+            <!-- If User B associated with the Subscription used to authorize access -->
+            <when condition="@(context.User.Id == "2")">
                 <rate-limit-by-key calls="10" renewal-period="60"
                                    counter-key="@(context.User.Id)"
                                    remaining-calls-variable-name="remainingCallsPerSubscriptionB" />
             </when>
-            <!-- Default Rate Limit for Other Subscriptions -->
+            <!-- Default Rate Limit for Other Users -->
             <otherwise>
                 <rate-limit-by-key calls="3" renewal-period="60"
                                    counter-key="@(context.User.Id)"
