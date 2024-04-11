@@ -6,6 +6,12 @@ One-button deploy APIM, Key vault, and Log Analytics. Auto-configure APIM to wor
 
 Using Azure's APIM orchestration provides a organizations with a powerful way to scale and manage their Azure OpenAI service without deploying Azure OpenAI endpoints everywhere. Administrators can issue subscription keys via APIM for accessing a single Azure OpenAI service instead of having teams share Azure OpenAI keys. APIM delivers usage metrics along with API monitoring to improve business intelligence. APIM policies control access, throttling, and a mechanism for chargeback cost models.
 
+Gain conceptual details and technical step-by-step knowledge on implementing APIM to support your Azure OpenAI resiliency, scalability, performance, monitoring, and charge back capabilities. 
+
+> [!IMPORTANT]
+>
+> The goal with this repo is to provide more than conceptual knowledge on the services and technology. We want you to walk away from this repo knowing EXACTLY what to do to add these capabilities to YOUR enterprise. If we are missing information  or steps or details or visuals or videos or anything that adds friction to you gaining this knowledge effectively and efficiently, please say something - [Add your Ideas · Discussions · GitHub](https://github.com/microsoft/AzureOpenAI-with-APIM/discussions/categories/ideas).
+
 ## Solutions
 
 There are two solutions developed to meet the needs of the organization from a sandbox to model a production environment.
