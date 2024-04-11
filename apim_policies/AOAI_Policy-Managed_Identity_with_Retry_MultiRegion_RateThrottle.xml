@@ -4,20 +4,25 @@
         <set-backend-service backend-id="aoai-primary-backend" />
         <authentication-managed-identity resource="https://cognitiveservices.azure.com" />
         <!-- Apply rate limiting -->
-        <rate-limit-by-key calls="1"
-            renewal-period="60"
-            counter-key="@(context.Request.Headers.GetValueOrDefault(" Authorization","").AsJwt()?.Subject)"
-            remaining-calls-variable-name="remainingCallsPerSubscription" />
-
         <choose>
-            <when condition="@((int)context.Variables['remainingCallsPerSubscription'] == 0)">
-                <return-response>
-                    <set-status code="429" reason="Too Many Requests" />
-                    <set-header name="X-Rate-Limit-Retry-After-Seconds" exists-action="override">
-                        <value>60</value> <!-- Adjust the value based on your rate limit reset time -->
-                    </set-header>
-                </return-response>
+            <!-- If Subscription A -->
+            <when condition="@(context.User.Id == '1')">
+                <rate-limit-by-key calls="5" renewal-period="60"
+                                   counter-key="@(context.User.Id)"
+                                   remaining-calls-variable-name="remainingCallsPerSubscriptionA" />
             </when>
+            <!-- If Subscription B -->
+            <when condition="@(context.User.Id == '2')">
+                <rate-limit-by-key calls="10" renewal-period="60"
+                                   counter-key="@(context.User.Id)"
+                                   remaining-calls-variable-name="remainingCallsPerSubscriptionB" />
+            </when>
+            <!-- Default Rate Limit for Other Subscriptions -->
+            <otherwise>
+                <rate-limit-by-key calls="3" renewal-period="60"
+                                   counter-key="@(context.User.Id)"
+                                   remaining-calls-variable-name="remainingCallsPerOtherSubscriptions" />
+            </otherwise>
         </choose>
     </inbound>
     <backend>
