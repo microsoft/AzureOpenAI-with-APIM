@@ -80,6 +80,9 @@ module applicationInsights 'modules/app-insights.bicep' = {
     workspaceName: logAnalyticsName
     applicationInsightsName: applicationInsightsName
   }
+  dependsOn: [
+    logAnalyticsWorkspace
+  ]
 }
 
 module apiManagement 'modules/api-management.bicep' = {
@@ -95,6 +98,11 @@ module apiManagement 'modules/api-management.bicep' = {
     eventHubName: eventHubName
     eventHubNamespaceName: eventHubNamespaceName
   }
+  dependsOn: [
+    logAnalyticsWorkspace
+    eventHub
+    applicationInsights
+  ]
 }
 
 module api 'modules/api.bicep' = {
@@ -128,6 +136,9 @@ resource azureEventHubsDataSender 'Microsoft.Authorization/roleAssignments@2022-
     principalType: 'ServicePrincipal'
     roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', azureRoles.AzureEventHubsDataSender)
   }
+  dependsOn: [
+    apiManagement
+  ]
 }
 
 resource primaryAzureOpenAiParent 'Microsoft.EventHub/namespaces@2021-01-01-preview' existing = {
@@ -142,6 +153,9 @@ resource openAiUserPrimary 'Microsoft.Authorization/roleAssignments@2022-04-01' 
     principalType: 'ServicePrincipal'
     roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', azureRoles.CognitiveServicesOpenAIUser)
   }
+  dependsOn: [
+    apiManagement
+  ]
 }
 
 resource secondaryAzureOpenAiParent 'Microsoft.EventHub/namespaces@2021-01-01-preview' existing = if(azureOpenAiRegionType == 'Multi'){
@@ -156,6 +170,9 @@ resource openAiUserSecondary 'Microsoft.Authorization/roleAssignments@2022-04-01
     principalType: 'ServicePrincipal'
     roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', azureRoles.CognitiveServicesOpenAIUser)
   }
+  dependsOn: [
+    apiManagement
+  ]
 }
 
 output apiManagementProxyHostName string = apiManagement.outputs.apiManagementProxyHostName
