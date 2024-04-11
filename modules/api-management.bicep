@@ -48,7 +48,7 @@ resource aiLoggerWithSystemAssignedIdentity 'Microsoft.ApiManagement/service/log
     loggerType: 'applicationInsights'
     description: 'Application Insights logger with connection string'
     credentials: {
-      connectionString: aiParent.properties.InstrumentationKey
+      connectionString: aiParent.properties.ConnectionString
       identityClientId: 'systemAssigned'
     }
   }

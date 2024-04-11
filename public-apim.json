@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.22.6.54827",
-      "templateHash": "13923081091257559265"
+      "templateHash": "16641272615205984733"
     }
   },
   "parameters": {
@@ -77,7 +77,7 @@
     }
   },
   "variables": {
-    "azureRoles": {
+    "$fxv#0": {
       "AccessReviewOperatorServiceRole": "76cc9ee4-d5d3-4a45-a930-26add3d73475",
       "AcrDelete": "c2f4ef07-c644-48eb-af81-4b1b4947fb11",
       "AcrImageSigner": "6cef56e8-d556-48e5-a04f-b8e64114680f",
@@ -591,7 +591,8 @@
     "logAnalyticsName": "[format('law-{0}', variables('unique'))]",
     "eventHubName": "[format('eh-{0}', variables('unique'))]",
     "eventHubNamespaceName": "[format('ehn-{0}', variables('unique'))]",
-    "applicationInsightsName": "[format('appIn-{0}', variables('unique'))]"
+    "applicationInsightsName": "[format('appIn-{0}', variables('unique'))]",
+    "azureRoles": "[variables('$fxv#0')]"
   },
   "resources": [
     {
@@ -957,7 +958,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.22.6.54827",
-              "templateHash": "12128798988084540237"
+              "templateHash": "3547690487784280293"
             }
           },
           "parameters": {
@@ -1033,7 +1034,7 @@
                 "loggerType": "applicationInsights",
                 "description": "Application Insights logger with connection string",
                 "credentials": {
-                  "connectionString": "[reference(resourceId('Microsoft.Insights/components', parameters('aiName')), '2020-02-02-preview').InstrumentationKey]",
+                  "connectionString": "[reference(resourceId('Microsoft.Insights/components', parameters('aiName')), '2020-02-02-preview').ConnectionString]",
                   "identityClientId": "systemAssigned"
                 }
               },

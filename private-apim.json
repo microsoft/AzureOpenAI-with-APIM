@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.22.6.54827",
-      "templateHash": "7016659810882903265"
+      "templateHash": "10456502202723618047"
     }
   },
   "parameters": {
@@ -91,7 +91,7 @@
     }
   },
   "variables": {
-    "azureRoles": {
+    "$fxv#0": {
       "AccessReviewOperatorServiceRole": "76cc9ee4-d5d3-4a45-a930-26add3d73475",
       "AcrDelete": "c2f4ef07-c644-48eb-af81-4b1b4947fb11",
       "AcrImageSigner": "6cef56e8-d556-48e5-a04f-b8e64114680f",
@@ -608,7 +608,8 @@
     "eventHubName": "[format('eh-{0}', variables('unique'))]",
     "eventHubNamespaceName": "[format('ehn-{0}', variables('unique'))]",
     "applicationInsightsName": "[format('appIn-{0}', variables('unique'))]",
-    "privateDnsZoneName": "azure-api.net"
+    "privateDnsZoneName": "azure-api.net",
+    "azureRoles": "[variables('$fxv#0')]"
   },
   "resources": [
     {
@@ -1321,7 +1322,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.22.6.54827",
-              "templateHash": "13447205872548839196"
+              "templateHash": "3490731321534115078"
             }
           },
           "parameters": {
@@ -1407,7 +1408,7 @@
                 "loggerType": "applicationInsights",
                 "description": "Application Insights logger with connection string",
                 "credentials": {
-                  "connectionString": "[reference(resourceId('Microsoft.Insights/components', parameters('aiName')), '2020-02-02-preview').InstrumentationKey]",
+                  "connectionString": "[reference(resourceId('Microsoft.Insights/components', parameters('aiName')), '2020-02-02-preview').ConnectionString]",
                   "identityClientId": "systemAssigned"
                 }
               },
