@@ -1,0 +1,76 @@
+<policies>
+    <inbound>
+        <base />
+        <set-variable name="originalText" value="@((string)context.Request.Body.As<JObject>()["text"])" />
+        <!-- Step 1: Send input to the Content Safety API -->
+        <send-request mode="new" response-variable-name="contentSafetyResponse" timeout="20" ignore-error="false">
+            <set-url>https://retroburn-contentsafety.cognitiveservices.azure.com/contentsafety/text:analyze?api-version=2023-10-01</set-url>
+            <set-method>POST</set-method>
+            <set-header name="Ocp-Apim-Subscription-Key" exists-action="override">
+                <value>{{content-safety-api-key}}</value>
+            </set-header>
+            <set-body>@{
+                return new JObject(
+                    new JProperty("text", context.Variables["originalText"]),
+                    new JProperty("categories", new JArray("Hate", "Sexual", "SelfHarm", "Violence")),
+                    new JProperty("blocklistNames", new JArray()),
+                    new JProperty("haltOnBlocklistHit", false),
+                    new JProperty("outputType", "FourSeverityLevels")
+                ).ToString();
+            }</set-body>
+        </send-request>
+        <!-- Step 2: Check Content Safety API response -->
+        <choose>
+            <when condition="@{
+        // Parse the response into a JSON object
+        var responseContent = context.Variables.GetValueOrDefault<IResponse>("contentSafetyResponse");
+        var responseJson = JObject.Parse(responseContent.Body.As<string>());
+        return responseJson["categoriesAnalysis"].All(cat => (int)cat["severity"] == 0);
+    }">
+                <!-- Content is safe, proceed to OpenAI API -->
+                <set-backend-service backend-id="aoai-primary-backend" />
+                <authentication-managed-identity resource="https://cognitiveservices.azure.com" />
+                <rewrite-uri template="/deployments/GPT-4/chat/completions?api-version=2024-02-15-preview" />
+                <set-body>@{
+                    var originalText = context.Variables["originalText"] as string; // Ensure this is cast appropriately
+                    var messages = new JArray(
+                        new JObject(
+                            new JProperty("role", "system"),
+                            new JProperty("content", "You are an AI assistant that helps people find information.")
+                        ),
+                        new JObject(
+                            new JProperty("role", "user"),
+                            new JProperty("content", originalText)
+                        )
+                    );
+                    return new JObject(
+                        new JProperty("messages", messages),
+                        new JProperty("temperature", 0.7),
+                        new JProperty("top_p", 0.95),
+                        new JProperty("max_tokens", 800)
+                    ).ToString();
+                }</set-body>
+            </when>
+            <otherwise>
+                <!-- Content is not safe, return error -->
+                <return-response>
+                    <set-status code="403" reason="Forbidden" />
+                    <set-body>@{
+                return new JObject(
+                    new JProperty("error", "Content violates safety policies.")
+                ).ToString();
+            }</set-body>
+                </return-response>
+            </otherwise>
+        </choose>
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>
