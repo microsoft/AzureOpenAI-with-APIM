@@ -570,6 +570,60 @@ ChatChoice choice = completions.Choices[0];
 Console.WriteLine(choice.Message.Content);
 ```
 
+#### Python
+
+Copy and paste this script into a text editor or Visual Studio code.
+
+Modify by including your values, then copy and paste all of it into bash terminal, run from VSC, or create a ".py" file to run.
+
+- [Link  to example.py file in the repo](https://github.com/microsoft/AzureOpenAI-with-APIM/blob/main/example_code/example.py)
+
+> [!NOTE]
+>
+> If you are running Juypter notebooks, this provides an example on using Azure OpenAI via APIM
+
+```python
+# This code is an example of how to use the OpenAI API with Azure API Management (APIM) in a Jupyter Notebook.
+import requests
+import json
+
+# Set the parameters
+apim_url = "apim_url"
+deployment_name = "deployment_name"
+api_version = "2024-02-15-preview"
+subscription_key = "subscription_key"
+
+# Construct the URL and headers
+url = f"{apim_url}/deployments/{deployment_name}/chat/completions?api-version={api_version}"
+headers = {
+    "Content-Type": "application/json",
+    "Ocp-Apim-Subscription-Key": subscription_key
+}
+
+# Define the JSON payload
+json_payload = {
+    "messages": [
+        {
+            "role": "system",
+            "content": "You are an AI assistant that helps people find information."
+        },
+        {
+            "role": "user",
+            "content": "What are the differences between Azure Machine Learning and Azure AI services?"
+        }
+    ],
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "max_tokens": 800
+}
+
+# Make the POST request
+response = requests.post(url, headers=headers, json=json_payload)
+
+# Print the response text (or you can process it further as needed)
+print(response.text)
+```
+
 ## References
 
 - [Calculating Chargebacks for Business Units/Projects Utilizing a Shared Azure OpenAI Instance - Microsoft Community Hub](https://techcommunity.microsoft.com/t5/apps-on-azure-blog/calculating-chargebacks-for-business-units-projects-utilizing-a/ba-p/3909202)
