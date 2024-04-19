@@ -1,0 +1,139 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+        "title": "Content Safety Service",
+        "description": "Azure AI Content Safety detects harmful user-generated and AI-generated content in applications and services. Azure AI Content Safety includes text, image, and multimodal APIs which allows you to detect material that is potentially offensive, risky, or otherwise undesirable. We also have an Interactive Studio that allows you to view, explore and try out for detecting harmful content across different modalities.\n\nFor more detailed information, please refer to this product document (<a href=\"https://review.learn.microsoft.com/en-us/azure/cognitive-services/content-safety/concepts/harm-categories?branch=release-build-content-safety\">link</a>).",
+        "version": "1.0"
+    },
+    "servers": [
+        {
+            "url": "https://apim-m6myk2dykn6hw.azure-api.net/contentsafety"
+        }
+    ],
+    "paths": {
+        "/text:analyze": {
+            "post": {
+                "summary": "Analyze Text",
+                "description": "A synchronous API for the analysis of potentially harmful text content. Currently, it supports four categories: Hate, SelfHarm, Sexual, and Violence.",
+                "operationId": "6619a53b217d2012a8217537",
+                "requestBody": {
+                    "description": "The text analysis request.",
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "text": "string",
+                                "categories": [
+                                    "Hate"
+                                ],
+                                "blocklistNames": [
+                                    "string"
+                                ],
+                                "haltOnBlocklistHit": true,
+                                "outputType": "FourSeverityLevels"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The request has succeeded.",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "blocklistsMatch": [
+                                        {
+                                            "blocklistName": "string",
+                                            "blocklistItemId": "string",
+                                            "blocklistItemText": "string"
+                                        }
+                                    ],
+                                    "categoriesAnalysis": [
+                                        {
+                                            "category": "Hate",
+                                            "severity": 0
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "An unexpected error response.",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/image:analyze": {
+            "post": {
+                "summary": "Analyze Image",
+                "description": "A synchronous API for the analysis of potentially harmful image content. Currently, it supports four categories: Hate, SelfHarm, Sexual, and Violence.",
+                "operationId": "6619a53b217d2012a8217538",
+                "requestBody": {
+                    "description": "The image analysis request.",
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "image": {
+                                    "content": "string",
+                                    "blobUrl": "string"
+                                },
+                                "categories": [
+                                    "Hate"
+                                ],
+                                "outputType": "FourSeverityLevels"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The request has succeeded.",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "categoriesAnalysis": [
+                                        {
+                                            "category": "Hate",
+                                            "severity": 0
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "An unexpected error response.",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "apiKeyHeader": {
+                "type": "apiKey",
+                "name": "Ocp-Apim-Subscription-Key",
+                "in": "header"
+            },
+            "apiKeyQuery": {
+                "type": "apiKey",
+                "name": "subscription-key",
+                "in": "query"
+            }
+        }
+    },
+    "security": [
+        {
+            "apiKeyHeader": []
+        },
+        {
+            "apiKeyQuery": []
+        }
+    ]
+}

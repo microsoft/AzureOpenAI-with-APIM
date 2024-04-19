@@ -45,7 +45,7 @@ var apiServiceUrlSecondary = 'https://${apiServiceNameSecondary}.openai.azure.co
 var openApiXmlRetry = enableRetryPolicy ? 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AOAI_Policy-Managed_Identity_with_Retry_SingleRegion.xml' : 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AOAI_Policy-Managed_Identity.xml'
 var openApiXml = azureOpenAiRegionType == 'Multi' ? 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AOAI_Policy-Managed_Identity_with_Retry_MultiRegion.xml' : openApiXmlRetry
 
-var openApiJson = 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AzureOpenAI_OpenAPI.json'
+var openApiJson = 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/api_definitions/AzureOpenAI_OpenAPI.json'
 
 var apiManagementSkuCount = 1
 
