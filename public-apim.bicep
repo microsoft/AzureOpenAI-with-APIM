@@ -42,8 +42,8 @@ var apiServiceUrlPrimary = 'https://${apiServiceNamePrimary}.openai.azure.com/op
 var apiServiceUrlSecondary = 'https://${apiServiceNameSecondary}.openai.azure.com/openai'
 
 // The following logic is used to determine the OpenAPI XML policy file to use based on the region type and retry policy setting.
-var openApiXmlRetry = enableRetryPolicy ? 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AOAI_Policy-Managed_Identity_with_Retry_SingleRegion.xml' : 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AOAI_Policy-Managed_Identity.xml'
-var openApiXml = azureOpenAiRegionType == 'Multi' ? 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/AOAI_Policy-Managed_Identity_with_Retry_MultiRegion.xml' : openApiXmlRetry
+var openApiXmlRetry = enableRetryPolicy ? 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/apim_policies/AOAI_Policy-Managed_Identity_with_Retry_SingleRegion.xml' : 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/apim_policies/AOAI_Policy-Managed_Identity.xml'
+var openApiXml = azureOpenAiRegionType == 'Multi' ? 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/apim_policies/AOAI_Policy-Managed_Identity_with_Retry_MultiRegion.xml' : openApiXmlRetry
 
 var openApiJson = 'https://raw.githubusercontent.com/microsoft/AzureOpenAI-with-APIM/main/api_definitions/AzureOpenAI_OpenAPI.json'
 
