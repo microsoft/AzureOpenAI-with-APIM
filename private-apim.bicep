@@ -23,10 +23,10 @@ param apiManagementPublisherName string = 'Contoso'
 param apiManagementPublisherEmail string = 'admin@contoso.com'
 
 
-@description('Provide the Name of the Azure Open AI service.')
+@description('Provide the Name of the Azure OpenAI service.')
 param apiServiceNamePrimary string = 'Insert_Your_Azure_OpenAi_Name_Here'
 
-@description('Provide the Resource Group Name of the Azure Open AI service.')
+@description('Provide the Resource Group Name of the Azure OpenAI service.')
 param apiServiceRgPrimary string = 'Insert_Resource_Group_Name_Here'
 
 @description('If you want to provide resiliency when single region exceeds quota, then select Multi and provide URL to an additional Azure OpenAI endpoint. Otherwise, maintain default entry of Single and only provide one Azure OpenAI endpoint.')
@@ -39,7 +39,7 @@ param azureOpenAiRegionType string = 'Single'
 @description('If you select Multi in azureOpenAiRegionType, then you must provide another Azure OpenAI Name here.')
 param apiServiceNameSecondary string = 'Maybe-Insert_Your_Secondary_Azure_OpenAi_Name_Here'
 
-@description('If you select Multi in azureOpenAiRegionType, provide the Resource Group Name of the Azure Open AI service.')
+@description('If you select Multi in azureOpenAiRegionType, provide the Resource Group Name of the Azure OpenAI service.')
 param apiServiceRgSecondary string = 'Maybe-Insert_Resource_Group_Name_Here'
 
 @description('If you want to enable retry policy for the API, set this to true. Otherwise, set this to false.')
