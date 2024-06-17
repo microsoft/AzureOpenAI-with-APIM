@@ -7,7 +7,7 @@ param openApiXml string
 param serviceUrlPrimary string
 param serviceUrlSecondary string
 param apiSubscriptionName string
-param azureOpenAiRegionType string = 'Single'
+param azureOpenAiRegionType string
 
 resource parentAPIM 'Microsoft.ApiManagement/service@2023-03-01-preview' existing = {
   name: apimName
