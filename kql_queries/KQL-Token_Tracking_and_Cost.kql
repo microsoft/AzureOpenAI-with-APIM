@@ -17,13 +17,13 @@ customMetrics
         deploymentId == "gpt-4o-global" and tokenType == "Prompt Tokens", tokens / 1000 * 0.04,
         deploymentId == "gpt-4" and tokenType == "Prompt Tokens", tokens / 1000 * 0.02,
         deploymentId == "gpt-35-turbo" and tokenType == "Prompt Tokens", tokens / 1000 * 0.0015,
-        0.0), 2),
+        0.0), 3),
     completionTokenCost = round(case(
         deploymentId == "gpt-4o" and tokenType == "Completion Tokens", tokens / 1000 * 0.06,
         deploymentId == "gpt-4o-global" and tokenType == "Completion Tokens", tokens / 1000 * 0.07,
         deploymentId == "gpt-4" and tokenType == "Completion Tokens", tokens / 1000 * 0.05,
         deploymentId == "gpt-35-turbo" and tokenType == "Completion Tokens", tokens / 1000 * 0.002,
-        0.0), 2)
+        0.0), 3)
 | summarize 
     totalPromptTokens = sumif(tokens, tokenType == "Prompt Tokens"), 
     totalCompletionTokens = sumif(tokens, tokenType == "Completion Tokens"),
