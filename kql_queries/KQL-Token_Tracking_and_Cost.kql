@@ -1,0 +1,31 @@
+customMetrics
+| where name != "_APPRESOURCEPREVIEW_" // Exclude unwanted records
+| where isnotempty(tostring(customDimensions['Deployment ID'])) // Only include records with a Deployment ID
+| extend 
+    subscriptionId = tostring(customDimensions['Subscription ID']),
+    deploymentId = tostring(customDimensions['Deployment ID']),
+    tokens = toreal(value), // Extract the token count
+    tokenType = case(
+        name == "Prompt Tokens", "Prompt Tokens",
+        name == "Completion Tokens", "Completion Tokens", 
+        "Other") // Identify token type
+| where tokenType in ("Prompt Tokens", "Completion Tokens") // Filter to relevant token types
+| extend 
+    // Calculate costs based on Deployment ID and Token Type, rounded to 2 decimal places
+    promptTokenCost = round(case(
+        deploymentId == "gpt-4o" and tokenType == "Prompt Tokens", tokens / 1000 * 0.03,
+        deploymentId == "gpt-4o-global" and tokenType == "Prompt Tokens", tokens / 1000 * 0.04,
+        0.0), 2),
+    completionTokenCost = round(case(
+        deploymentId == "gpt-4o" and tokenType == "Completion Tokens", tokens / 1000 * 0.06,
+        deploymentId == "gpt-4o-global" and tokenType == "Completion Tokens", tokens / 1000 * 0.07,
+        0.0), 2)
+| summarize 
+    totalPromptTokens = sumif(tokens, tokenType == "Prompt Tokens"), 
+    totalCompletionTokens = sumif(tokens, tokenType == "Completion Tokens"),
+    totalPromptTokenCost = round(sumif(promptTokenCost, tokenType == "Prompt Tokens"), 2), 
+    totalCompletionTokenCost = round(sumif(completionTokenCost, tokenType == "Completion Tokens"), 2)
+    by subscriptionId, deploymentId // Group by Subscription ID and Deployment ID
+| extend 
+    totalCost = round(totalPromptTokenCost + totalCompletionTokenCost, 2) // Add total cost, rounded to 2 decimal places
+| order by totalCost desc // Sort by total cost
