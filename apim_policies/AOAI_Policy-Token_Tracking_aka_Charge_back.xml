@@ -1,0 +1,28 @@
+<policies>
+    <inbound>
+        <set-backend-service id="apim-generated-policy" backend-id="azure-openai-openai-endpoint" />
+        <!-- Extract the deployment ID from the URL path after '/deployments/' -->
+        <set-variable name="deploymentId" value="@(context.Request.Url.Path.Split('/').ElementAtOrDefault(3))" />
+        <!-- Emit token metrics with the deployment ID as a dimension -->
+        <azure-openai-token-limit tokens-per-minute="10000000" counter-key="@(context.Subscription.Id)" estimate-prompt-tokens="true" tokens-consumed-header-name="consumed-tokens" remaining-tokens-header-name="remaining-tokens" />
+        <azure-openai-emit-token-metric>
+            <dimension name="API ID" />
+            <dimension name="Subscription ID" />
+            <dimension name="User ID" />
+            <dimension name="Product ID" />
+            <!-- Add the extracted deployment ID as a custom dimension -->
+            <dimension name="Deployment ID" value="@(context.Variables.GetValueOrDefault<string>("deploymentId", "unknown"))" />
+        </azure-openai-emit-token-metric>
+        <authentication-managed-identity resource="https://cognitiveservices.azure.com/" />
+        <base />
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>
