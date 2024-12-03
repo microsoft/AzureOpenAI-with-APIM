@@ -1,0 +1,42 @@
+<policies>
+    <inbound>
+        <base />
+        <!-- Check if the Priority header exists -->
+        <set-variable name="priorityValue" value="@(context.Request.Headers.GetValueOrDefault("Priority", "0"))" />
+
+        <!-- Convert the priorityValue to an integer -->
+        <set-variable name="priorityInt" value="@{
+            int priority;
+            return int.TryParse((string)context.Variables["priorityValue"], out priority) ? priority : 0;
+        }" />
+
+        <!-- Conditional routing based on priorityInt -->
+        <choose>
+            <!-- Route to PTU Endpoint if Priority is between 0 and 100 -->
+            <when condition="@(context.Variables.GetValueOrDefault<int>("priorityInt") >= 0 && context.Variables.GetValueOrDefault<int>("priorityInt") <= 100)">
+                <set-backend-service backend-id="aoai-ptu-backend" />
+            </when>
+            <!-- Route to Regional Endpoint if Priority is between 101 and 500 -->
+            <when condition="@(context.Variables.GetValueOrDefault<int>("priorityInt") >= 101 && context.Variables.GetValueOrDefault<int>("priorityInt") <= 500)">
+                <set-backend-service backend-id="aoai-regional-backend" />
+            </when>
+            <!-- Route to Data Zone Deployment if Priority is between 501 and 1000 -->
+            <when condition="@(context.Variables.GetValueOrDefault<int>("priorityInt") >= 501 && context.Variables.GetValueOrDefault<int>("priorityInt") <= 1000)">
+                <set-backend-service backend-id="aoai-data_zone-backend" />
+            </when>
+            <!-- Default routing using Circuit Breaker pool if Priority header is missing or out of range -->
+            <otherwise>
+                <set-backend-service backend-id="aoai-circuit_breaker-backend" />
+            </otherwise>
+        </choose>
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>

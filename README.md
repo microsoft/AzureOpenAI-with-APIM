@@ -73,6 +73,98 @@ To improve performance, Azure OpenAI has a cost model called Provisioned Through
 
 - [Implement Performance](#performance)
 
+#### Implementing Priority-based Routing
+
+To effectively manage performance and resource utilization, you can implement priority-based routing in Azure API Management (APIM). This allows you to direct high-priority requests to more performant (and potentially more costly) PTU endpoints, while routing lower-priority requests to standard pay-as-you-go endpoints.
+
+#### APIM Policy Configuration
+
+Below is an example of an APIM policy that routes requests based on the `Priority` header value:
+
+```xml
+<policies>
+    <inbound>
+        <base />
+        <!-- Check if the Priority header exists -->
+        <set-variable name="priorityValue" value="@(context.Request.Headers.GetValueOrDefault("Priority", "0"))" />
+
+        <!-- Convert the priorityValue to an integer -->
+        <set-variable name="priorityInt" value="@{
+            int priority;
+            return int.TryParse((string)context.Variables["priorityValue"], out priority) ? priority : 0;
+        }" />
+
+        <!-- Conditional routing based on priorityInt -->
+        <choose>
+            <!-- Route to PTU Endpoint if Priority is between 0 and 100 -->
+            <when condition="@(context.Variables.GetValueOrDefault<int>("priorityInt") >= 0 && context.Variables.GetValueOrDefault<int>("priorityInt") <= 100)">
+                <set-backend-service backend-id="aoai-ptu-backend" />
+            </when>
+            <!-- Route to Regional Endpoint if Priority is between 101 and 500 -->
+            <when condition="@(context.Variables.GetValueOrDefault<int>("priorityInt") >= 101 && context.Variables.GetValueOrDefault<int>("priorityInt") <= 500)">
+                <set-backend-service backend-id="aoai-regional-backend" />
+            </when>
+            <!-- Route to Data Zone Deployment if Priority is between 501 and 1000 -->
+            <when condition="@(context.Variables.GetValueOrDefault<int>("priorityInt") >= 501 && context.Variables.GetValueOrDefault<int>("priorityInt") <= 1000)">
+                <set-backend-service backend-id="aoai-data_zone-backend" />
+            </when>
+            <!-- Default routing using Circuit Breaker pool if Priority header is missing or out of range -->
+            <otherwise>
+                <set-backend-service backend-id="aoai-circuit_breaker-backend" />
+            </otherwise>
+        </choose>
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>
+
+```
+
+**Explanation:**
+
+- **Set Variable `priorityValue`:** Retrieves the `Priority` header value from the incoming request. If it's missing, it defaults to `"0"`.
+- **Set Variable `priorityInt`:** Converts the `priorityValue` to an integer for comparison purposes.
+- **Conditional Routing with `<choose>`:**
+  - **First `<when>` Condition:** Routes to the PTU Endpoint if `Priority` is between **0 and 100**.
+  - **Second `<when>` Condition:** Routes to the Regional Endpoint if `Priority` is between **101 and 500**.
+  - **Third `<when>` Condition:** Routes to the Data zone Deployment if `Priority` is between **501 and 1000**.
+  - **`<otherwise>` Condition:** Routes to a default endpoint using a Circuit Breaker pool if the `Priority` header is missing or doesn't match any of the defined conditions.
+
+**Notes:**
+
+- Replace the `base-url` in `<set-backend-service>` with your actual endpoint URLs.
+- Ensure that the priority ranges are correctly defined and non-overlapping.
+- This policy should be added to the inbound section of your APIM policy configuration.
+
+#### HTTP Header Configuration
+
+To make this routing work, clients need to include the `Priority` header in their HTTP requests.
+
+- **HTTP Request Header:**
+  - **Header Name:** `Priority`
+  - **Header Value:** An integer between **0 and 1000** depending on the desired priority level.
+
+**Example HTTP Request:**
+
+```http
+POST /apim/url HTTP/1.1
+Host: your-apim-instance.azure-api.net
+Priority: 50
+Content-Type: application/json
+Authorization: Bearer your-access-token
+
+{
+    "your": "request-body"
+}
+```
+
 ### Cost Management (Rate Limiting)
 
 - Provide cost management per subscription with Rate Throttling
