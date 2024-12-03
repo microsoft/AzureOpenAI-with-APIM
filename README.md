@@ -1,3 +1,15 @@
+> [!NOTE]
+>
+> Updated on 2024-12-03, 
+>
+> - Added Priority routing policy
+>   - This provides ability to include a Priority value in the HTTP header, which will route the request to your predefined backend. You can combine this with other policies like rate throttling to control throughput while ensuring defined services meet organizational SLAs. Combine with the circuit breaker pool for requests that do not include priority header info. 
+> - Added more details and reporting on Cost Management
+>   - Details on implementing the policies and how to generate log analytics reports via App insights
+>   - Details on creating Power BI reports using log analytics as a data source, this can provide leadership and management access to reporting without needing access to Azure Portal.
+
+
+
 # Manage Azure OpenAI using APIM
 
 ## Overview
