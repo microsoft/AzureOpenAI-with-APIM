@@ -124,7 +124,6 @@ Below is an example of an APIM policy that routes requests based on the `Priorit
         <base />
     </on-error>
 </policies>
-
 ```
 
 **Explanation:**
@@ -139,7 +138,7 @@ Below is an example of an APIM policy that routes requests based on the `Priorit
 
 **Notes:**
 
-- Replace the `base-url` in `<set-backend-service>` with your actual endpoint URLs.
+- Replace the `base-url` in `<set-backend-service>` with your actual endpoint URLs or backend name.
 - Ensure that the priority ranges are correctly defined and non-overlapping.
 - This policy should be added to the inbound section of your APIM policy configuration.
 
