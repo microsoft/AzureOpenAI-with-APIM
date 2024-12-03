@@ -445,6 +445,251 @@ TBD
 
 - Provide cost management per subscription
 
+To effectively manage the costs associated with Azure OpenAI Service usage, you can implement policies in Azure API Management (APIM) that control and monitor the number of tokens consumed by each request. By limiting tokens per subscription and emitting detailed metrics, you can enforce usage quotas, prevent overuse, and enable charge-back models for cost recovery.
+
+### Implementing Token Limits and Metrics Emission
+
+The following APIM policy helps you manage costs by:
+
+- Limiting the number of tokens a subscription can consume per minute.
+- Estimating prompt tokens to include both prompt and completion tokens in the limit.
+- Emitting token usage metrics with dimensions that help you analyze and report on token consumption per deployment and subscription.
+
+#### APIM Policy Configuration
+
+```
+xmlCopy code<policies>
+    <inbound>
+        <!-- Set the backend service to your Azure OpenAI endpoint -->
+        <set-backend-service id="apim-generated-policy" backend-id="azure-openai-openai-endpoint" />
+
+        <!-- Extract the deployment ID from the URL path after '/deployments/' -->
+        <set-variable name="deploymentId" value="@(context.Request.Url.Path.Split('/').ElementAtOrDefault(3))" />
+
+        <!-- Limit tokens per minute per subscription -->
+        <azure-openai-token-limit
+            tokens-per-minute="10000000"
+            counter-key="@(context.Subscription.Id)"
+            estimate-prompt-tokens="true"
+            tokens-consumed-header-name="consumed-tokens"
+            remaining-tokens-header-name="remaining-tokens" />
+
+        <!-- Emit token metrics with custom dimensions -->
+        <azure-openai-emit-token-metric>
+            <dimension name="API ID" />
+            <dimension name="Subscription ID" />
+            <dimension name="User ID" />
+            <dimension name="Product ID" />
+            <!-- Include the deployment ID as a custom dimension -->
+            <dimension name="Deployment ID" value="@(context.Variables.GetValueOrDefault<string>("deploymentId", "unknown"))" />
+        </azure-openai-emit-token-metric>
+
+        <!-- Authenticate using Managed Identity -->
+        <authentication-managed-identity resource="https://cognitiveservices.azure.com/" />
+        <base />
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>
+```
+
+#### Explanation
+
+- **Set Backend Service**: The `<set-backend-service>` element directs the request to your Azure OpenAI endpoint.
+
+  ```
+  xml
+  
+  
+  Copy code
+  <set-backend-service id="apim-generated-policy" backend-id="azure-openai-openai-endpoint" />
+  ```
+
+- **Extract Deployment ID**: The `<set-variable>` element extracts the deployment ID from the request URL path. This is useful for tracking usage per model deployment.
+
+  ```
+  xml
+  
+  
+  Copy code
+  <set-variable name="deploymentId" value="@(context.Request.Url.Path.Split('/').ElementAtOrDefault(3))" />
+  ```
+
+- **Token Limit**: The `<azure-openai-token-limit>` policy limits the number of tokens that can be consumed per minute per subscription.
+
+  ```
+  xmlCopy code<azure-openai-token-limit
+      tokens-per-minute="10000000"
+      counter-key="@(context.Subscription.Id)"
+      estimate-prompt-tokens="true"
+      tokens-consumed-header-name="consumed-tokens"
+      remaining-tokens-header-name="remaining-tokens" />
+  ```
+
+  - `tokens-per-minute`: The maximum number of tokens allowed per minute. Adjust this value according to your cost management strategy.
+  - `counter-key`: The key used to track the token count. Using `context.Subscription.Id` enforces the limit per subscription.
+  - `estimate-prompt-tokens`: When set to `true`, includes an estimate of the prompt tokens in the token count.
+  - `tokens-consumed-header-name` and `remaining-tokens-header-name`: Custom header names to include in the response, indicating tokens consumed and remaining.
+
+- **Emit Token Metrics**: The `<azure-openai-emit-token-metric>` policy emits metrics for token usage, which can be used for monitoring and reporting.
+
+  ```
+  xmlCopy code<azure-openai-emit-token-metric>
+      <dimension name="API ID" />
+      <dimension name="Subscription ID" />
+      <dimension name="User ID" />
+      <dimension name="Product ID" />
+      <!-- Add the extracted deployment ID as a custom dimension -->
+      <dimension name="Deployment ID" value="@(context.Variables.GetValueOrDefault<string>("deploymentId", "unknown"))" />
+  </azure-openai-emit-token-metric>
+  ```
+
+  - Each `<dimension>` element adds a custom dimension to the emitted metric. Including `Deployment ID` helps in tracking usage per model deployment.
+
+- **Authentication with Managed Identity**: The `<authentication-managed-identity>` policy uses Managed Identity to authenticate with Azure Cognitive Services.
+
+  ```
+  xml
+  
+  
+  Copy code
+  <authentication-managed-identity resource="https://cognitiveservices.azure.com/" />
+  ```
+
+#### Steps to Implement
+
+1. **Configure the Policy**: Add the above policy to your API in APIM under the inbound processing section.
+2. **Adjust Token Limits**: Modify the `tokens-per-minute` value to set the desired token limit per subscription.
+3. **Monitor Metrics**:
+   - Use Azure Monitor or Application Insights to collect and analyze the emitted metrics.
+   - Set up dashboards and alerts based on token consumption to proactively manage costs.
+4. **Communicate Limits to Clients**:
+   - Inform your API consumers about the token limits.
+   - Clients can check the `consumed-tokens` and `remaining-tokens` headers in the response to monitor their usage.
+
+#### Benefits
+
+- **Cost Control**: By limiting the number of tokens per subscription, you prevent excessive usage that could lead to unexpectedly high costs.
+- **Transparency**: Emitting token metrics with custom dimensions allows for detailed usage analysis, enabling charge-back models or internal billing.
+- **Scalability**: Implementing token limits ensures that resources are fairly distributed among consumers, improving overall system performance.
+
+#### Example Response Headers
+
+When clients make requests, they can examine the response headers to see their token usage:
+
+```
+yamlCopy codeconsumed-tokens: 1500
+remaining-tokens: 9850000
+```
+
+#### Handling Limit Exceeded Errors
+
+If a client exceeds the token limit, APIM will return a **429 Too Many Requests** error. You can customize the error response using APIM policies to provide more context.
+
+```
+xmlCopy code<on-error>
+    <base />
+    <choose>
+        <when condition="@(context.Response.StatusCode == 429)">
+            <return-response>
+                <set-status code="429" reason="Too Many Requests" />
+                <set-header name="Retry-After" exists-action="override">
+                    <value>60</value>
+                </set-header>
+                <set-body>@{
+                    return @"{
+                        ""error"": {
+                            ""code"": ""TooManyTokens"",
+                            ""message"": ""Token limit exceeded. Please retry after some time.""
+                        }
+                    }";
+                }</set-body>
+            </return-response>
+        </when>
+    </choose>
+</on-error>
+```
+
+#### Monitoring and Reporting
+
+By emitting token metrics with custom dimensions, you can set up monitoring and reporting to track token consumption per subscription, deployment, and other dimensions. This can be achieved using:
+
+- **Azure Monitor Metrics**: Collect and analyze the custom metrics emitted by APIM.
+- **Log Analytics**: Aggregate logs and perform queries to generate usage reports.
+- **Alerts**: Configure alerts to notify when token usage approaches limits.
+- **Power BI**: Configure reports that connect to Log Analytics data sources.
+
+##### Log Analytics workspace via App Insights
+
+![Log Analytics report on use](./images/log-analytics-use-report.png)
+
+##### Power BI
+
+![Power BI Report on Use](./images/power-bi-use-report.png)
+
+#### Implementing Charge-back Models
+
+With detailed metrics, you can implement charge-back models where internal teams or external customers are billed based on their actual usage. By tracking token consumption per subscription, you can allocate costs accurately.
+
+### Example: Setting Up a Charge-back Report
+
+Use this KQL Query [AzureOpenAI-with-APIM/kql_queries/KQL-Token_Tracking_and_Cost.kql at main · microsoft/AzureOpenAI-with-APIM](https://github.com/microsoft/AzureOpenAI-with-APIM/blob/main/kql_queries/KQL-Token_Tracking_and_Cost.kql)
+
+1. **Collect Metrics**: Ensure that the emitted metrics are being collected in Azure Monitor or Application Insights.
+
+2. **Create a Log Analytics Workspace**: If you haven't already, create a Log Analytics workspace to store and query your metrics.
+
+3. **Query Metrics**: Use Kusto Query Language (KQL) to query the metrics and aggregate token usage per subscription or deployment.
+
+   ```
+   customMetrics
+   | where name != "_APPRESOURCEPREVIEW_" // Exclude unwanted records
+   | where isnotempty(tostring(customDimensions['Deployment ID'])) // Only include records with a Deployment ID
+   | extend 
+       subscriptionId = tostring(customDimensions['Subscription ID']),
+       deploymentId = tostring(customDimensions['Deployment ID']),
+       tokens = toreal(value), // Extract the token count
+       tokenType = case(
+           name == "Prompt Tokens", "Prompt Tokens",
+           name == "Completion Tokens", "Completion Tokens", 
+           "Other") // Identify token type
+   | where tokenType in ("Prompt Tokens", "Completion Tokens") // Filter to relevant token types
+   | extend 
+       // Calculate costs based on Deployment ID and Token Type, rounded to 2 decimal places
+       promptTokenCost = round(case(
+           deploymentId == "gpt-4o" and tokenType == "Prompt Tokens", tokens / 1000 * 0.03,
+           deploymentId == "gpt-4o-global" and tokenType == "Prompt Tokens", tokens / 1000 * 0.04,
+           deploymentId == "gpt-4" and tokenType == "Prompt Tokens", tokens / 1000 * 0.02,
+           deploymentId == "gpt-35-turbo" and tokenType == "Prompt Tokens", tokens / 1000 * 0.0015,
+           0.0), 3),
+       completionTokenCost = round(case(
+           deploymentId == "gpt-4o" and tokenType == "Completion Tokens", tokens / 1000 * 0.06,
+           deploymentId == "gpt-4o-global" and tokenType == "Completion Tokens", tokens / 1000 * 0.07,
+           deploymentId == "gpt-4" and tokenType == "Completion Tokens", tokens / 1000 * 0.05,
+           deploymentId == "gpt-35-turbo" and tokenType == "Completion Tokens", tokens / 1000 * 0.002,
+           0.0), 3)
+   | summarize 
+       totalPromptTokens = sumif(tokens, tokenType == "Prompt Tokens"), 
+       totalCompletionTokens = sumif(tokens, tokenType == "Completion Tokens"),
+       totalPromptTokenCost = round(sumif(promptTokenCost, tokenType == "Prompt Tokens"), 2), 
+       totalCompletionTokenCost = round(sumif(completionTokenCost, tokenType == "Completion Tokens"), 2)
+       by subscriptionId, deploymentId // Group by Subscription ID and Deployment ID
+   | extend 
+       totalCost = round(totalPromptTokenCost + totalCompletionTokenCost, 2) // Add total cost, rounded to 2 decimal places
+   | order by totalCost desc // Sort by total cost
+   ```
+
+4. **Generate Reports**: Use Azure Dashboards or Power BI to visualize the data and create reports for charge-back.
+
+5. **Automate Billing**: Export the reports or integrate with billing systems to automate the charge-back process.
+
 ## Cost Forecasting
 
 - Provide cost management per subscription
