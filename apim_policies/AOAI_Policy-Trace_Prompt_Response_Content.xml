@@ -1,0 +1,383 @@
+<policies>
+    <inbound>
+        <set-backend-service id="apim-generated-policy" backend-id="azure-openai-openai-endpoint" />
+        <set-variable name="contentCaptureMaxChars" value="32000" />
+        <set-variable name="deploymentId" value="@(context.Request.Url.Path.Split('/').ElementAtOrDefault(3))" />
+        <set-variable name="observedEndUserId" value="@{
+            var userId = context.Request.Headers.GetValueOrDefault(&quot;x-apim-end-user-id&quot;, string.Empty);
+            if (!String.IsNullOrEmpty(userId))
+            {
+                return userId;
+            }
+
+            if (context.User != null &amp;&amp; !String.IsNullOrEmpty(context.User.Id))
+            {
+                return context.User.Id;
+            }
+
+            return &quot;unknown&quot;;
+        }" />
+        <set-variable name="requestBodyRaw" value="@{
+            if (context.Request == null || context.Request.Body == null)
+            {
+                return String.Empty;
+            }
+
+            return context.Request.Body.As&lt;string&gt;(preserveContent: true) ?? String.Empty;
+        }" />
+        <set-variable name="streamRequested" value="@{
+            var requestBody = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;requestBodyRaw&quot;, string.Empty);
+            if (String.IsNullOrEmpty(requestBody))
+            {
+                return false;
+            }
+
+            try
+            {
+                var bodyToken = JToken.Parse(requestBody);
+                if (bodyToken.Type != JTokenType.Object)
+                {
+                    return false;
+                }
+
+                var streamToken = ((JObject)bodyToken)[&quot;stream&quot;];
+                return streamToken != null &amp;&amp; streamToken.Type == JTokenType.Boolean &amp;&amp; (bool)streamToken;
+            }
+            catch
+            {
+                return false;
+            }
+        }" />
+        <set-variable name="requestContentRaw" value="@{
+            var requestBody = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;requestBodyRaw&quot;, string.Empty);
+            if (String.IsNullOrEmpty(requestBody))
+            {
+                return String.Empty;
+            }
+
+            var promptText = requestBody;
+
+            try
+            {
+                var bodyToken = JToken.Parse(requestBody);
+                if (bodyToken.Type == JTokenType.Object)
+                {
+                    var bodyObject = (JObject)bodyToken;
+                    var messagesToken = bodyObject[&quot;messages&quot;];
+                    if (messagesToken != null &amp;&amp; messagesToken.Type == JTokenType.Array)
+                    {
+                        var promptParts = new List&lt;string&gt;();
+                        foreach (var messageToken in (JArray)messagesToken)
+                        {
+                            if (messageToken == null || messageToken.Type != JTokenType.Object)
+                            {
+                                continue;
+                            }
+
+                            var messageObject = (JObject)messageToken;
+                            var role = (string)messageObject[&quot;role&quot;] ?? &quot;unknown&quot;;
+                            var contentToken = messageObject[&quot;content&quot;];
+                            var contentText = string.Empty;
+
+                            if (contentToken == null)
+                            {
+                                continue;
+                            }
+
+                            if (contentToken.Type == JTokenType.String)
+                            {
+                                contentText = (string)contentToken;
+                            }
+                            else if (contentToken.Type == JTokenType.Array)
+                            {
+                                var contentParts = new List&lt;string&gt;();
+                                foreach (var contentItem in (JArray)contentToken)
+                                {
+                                    if (contentItem == null)
+                                    {
+                                        continue;
+                                    }
+
+                                    if (contentItem.Type == JTokenType.String)
+                                    {
+                                        contentParts.Add((string)contentItem);
+                                        continue;
+                                    }
+
+                                    if (contentItem.Type == JTokenType.Object)
+                                    {
+                                        var textValue = (string)contentItem[&quot;text&quot;] ?? (string)contentItem[&quot;input_text&quot;];
+                                        if (!String.IsNullOrEmpty(textValue))
+                                        {
+                                            contentParts.Add(textValue);
+                                        }
+                                    }
+                                }
+
+                                contentText = contentParts.Count &gt; 0
+                                    ? String.Join(&quot; &quot;, contentParts)
+                                    : contentToken.ToString(Formatting.None);
+                            }
+                            else if (contentToken.Type == JTokenType.Object)
+                            {
+                                contentText = (string)contentToken[&quot;text&quot;] ?? contentToken.ToString(Formatting.None);
+                            }
+
+                            if (!String.IsNullOrWhiteSpace(contentText))
+                            {
+                                promptParts.Add(role + &quot;: &quot; + contentText);
+                            }
+                        }
+
+                        if (promptParts.Count &gt; 0)
+                        {
+                            promptText = String.Join(&quot;\n\n&quot;, promptParts);
+                        }
+                    }
+                    else if (bodyObject[&quot;input&quot;] != null)
+                    {
+                        var inputToken = bodyObject[&quot;input&quot;];
+                        promptText = inputToken.Type == JTokenType.String
+                            ? (string)inputToken
+                            : inputToken.ToString(Formatting.None);
+                    }
+                    else if (bodyObject[&quot;prompt&quot;] != null)
+                    {
+                        var promptToken = bodyObject[&quot;prompt&quot;];
+                        promptText = promptToken.Type == JTokenType.String
+                            ? (string)promptToken
+                            : promptToken.ToString(Formatting.None);
+                    }
+                }
+            }
+            catch
+            {
+                return requestBody;
+            }
+
+            return promptText;
+        }" />
+        <set-variable name="requestContentOriginalChars" value="@((context.Variables.GetValueOrDefault&lt;string&gt;(&quot;requestContentRaw&quot;, string.Empty)).Length)" />
+        <set-variable name="requestContentWasTruncated" value="@((context.Variables.GetValueOrDefault&lt;string&gt;(&quot;requestContentRaw&quot;, string.Empty)).Length &gt; context.Variables.GetValueOrDefault&lt;int&gt;(&quot;contentCaptureMaxChars&quot;, 32000))" />
+        <set-variable name="requestContentForTrace" value="@{
+            var content = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;requestContentRaw&quot;, string.Empty);
+            var maxChars = context.Variables.GetValueOrDefault&lt;int&gt;(&quot;contentCaptureMaxChars&quot;, 32000);
+            return content.Length &gt; maxChars
+                ? content.Substring(0, maxChars) + &quot;\n...[truncated by APIM content logging policy]&quot;
+                : content;
+        }" />
+        <trace source="AzureOpenAIContentCapture" severity="information">
+            <message>@(context.Variables.GetValueOrDefault&lt;string&gt;(&quot;requestContentForTrace&quot;, string.Empty))</message>
+            <metadata name="ContentLogging" value="true" />
+            <metadata name="CapturePhase" value="inbound-request" />
+            <metadata name="APIMRequestId" value="@(context.RequestId.ToString())" />
+            <metadata name="DeploymentId" value="@(context.Variables.GetValueOrDefault&lt;string&gt;(&quot;deploymentId&quot;, &quot;unknown&quot;))" />
+            <metadata name="EndUserId" value="@(context.Variables.GetValueOrDefault&lt;string&gt;(&quot;observedEndUserId&quot;, &quot;unknown&quot;))" />
+            <metadata name="StreamRequested" value="@(context.Variables.GetValueOrDefault&lt;bool&gt;(&quot;streamRequested&quot;, false).ToString())" />
+            <metadata name="OriginalChars" value="@(context.Variables.GetValueOrDefault&lt;int&gt;(&quot;requestContentOriginalChars&quot;, 0).ToString())" />
+            <metadata name="Truncated" value="@(context.Variables.GetValueOrDefault&lt;bool&gt;(&quot;requestContentWasTruncated&quot;, false).ToString())" />
+        </trace>
+        <authentication-managed-identity resource="https://cognitiveservices.azure.com/" />
+        <base />
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <choose>
+            <when condition="@(!context.Variables.GetValueOrDefault&lt;bool&gt;(&quot;streamRequested&quot;, false))">
+                <set-variable name="responseBodyRaw" value="@{
+                    if (context.Response == null || context.Response.Body == null)
+                    {
+                        return String.Empty;
+                    }
+
+                    return context.Response.Body.As&lt;string&gt;(preserveContent: true) ?? String.Empty;
+                }" />
+                <set-variable name="responseContentRaw" value="@{
+                    var responseBody = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;responseBodyRaw&quot;, string.Empty);
+                    if (String.IsNullOrEmpty(responseBody))
+                    {
+                        return String.Empty;
+                    }
+
+                    var responseText = responseBody;
+
+                    try
+                    {
+                        var bodyToken = JToken.Parse(responseBody);
+                        if (bodyToken.Type == JTokenType.Object)
+                        {
+                            var bodyObject = (JObject)bodyToken;
+                            var choicesToken = bodyObject[&quot;choices&quot;];
+                            if (choicesToken != null &amp;&amp; choicesToken.Type == JTokenType.Array)
+                            {
+                                var responseParts = new List&lt;string&gt;();
+                                foreach (var choiceToken in (JArray)choicesToken)
+                                {
+                                    if (choiceToken == null || choiceToken.Type != JTokenType.Object)
+                                    {
+                                        continue;
+                                    }
+
+                                    var choiceObject = (JObject)choiceToken;
+                                    var choiceText = string.Empty;
+                                    var messageToken = choiceObject[&quot;message&quot;];
+
+                                    if (messageToken != null &amp;&amp; messageToken.Type == JTokenType.Object &amp;&amp; messageToken[&quot;content&quot;] != null)
+                                    {
+                                        var contentToken = messageToken[&quot;content&quot;];
+                                        if (contentToken.Type == JTokenType.String)
+                                        {
+                                            choiceText = (string)contentToken;
+                                        }
+                                        else if (contentToken.Type == JTokenType.Array)
+                                        {
+                                            var contentParts = new List&lt;string&gt;();
+                                            foreach (var contentItem in (JArray)contentToken)
+                                            {
+                                                if (contentItem == null)
+                                                {
+                                                    continue;
+                                                }
+
+                                                if (contentItem.Type == JTokenType.String)
+                                                {
+                                                    contentParts.Add((string)contentItem);
+                                                    continue;
+                                                }
+
+                                                if (contentItem.Type == JTokenType.Object)
+                                                {
+                                                    var textValue = (string)contentItem[&quot;text&quot;] ?? (string)contentItem[&quot;output_text&quot;];
+                                                    if (!String.IsNullOrEmpty(textValue))
+                                                    {
+                                                        contentParts.Add(textValue);
+                                                    }
+                                                }
+                                            }
+
+                                            choiceText = contentParts.Count &gt; 0
+                                                ? String.Join(&quot; &quot;, contentParts)
+                                                : contentToken.ToString(Formatting.None);
+                                        }
+                                        else if (contentToken.Type == JTokenType.Object)
+                                        {
+                                            choiceText = (string)contentToken[&quot;text&quot;] ?? contentToken.ToString(Formatting.None);
+                                        }
+                                    }
+
+                                    if (String.IsNullOrEmpty(choiceText) &amp;&amp; choiceObject[&quot;text&quot;] != null)
+                                    {
+                                        var textToken = choiceObject[&quot;text&quot;];
+                                        choiceText = textToken.Type == JTokenType.String
+                                            ? (string)textToken
+                                            : textToken.ToString(Formatting.None);
+                                    }
+
+                                    if (!String.IsNullOrWhiteSpace(choiceText))
+                                    {
+                                        responseParts.Add(choiceText);
+                                    }
+                                }
+
+                                if (responseParts.Count &gt; 0)
+                                {
+                                    responseText = String.Join(&quot;\n\n&quot;, responseParts);
+                                }
+                            }
+                            else if (bodyObject[&quot;output_text&quot;] != null)
+                            {
+                                var outputTextToken = bodyObject[&quot;output_text&quot;];
+                                responseText = outputTextToken.Type == JTokenType.String
+                                    ? (string)outputTextToken
+                                    : outputTextToken.ToString(Formatting.None);
+                            }
+                            else if (bodyObject[&quot;output&quot;] != null &amp;&amp; bodyObject[&quot;output&quot;].Type == JTokenType.Array)
+                            {
+                                var outputParts = new List&lt;string&gt;();
+                                foreach (var outputItem in (JArray)bodyObject[&quot;output&quot;])
+                                {
+                                    if (outputItem == null || outputItem.Type != JTokenType.Object)
+                                    {
+                                        continue;
+                                    }
+
+                                    var contentToken = outputItem[&quot;content&quot;];
+                                    if (contentToken != null &amp;&amp; contentToken.Type == JTokenType.Array)
+                                    {
+                                        foreach (var contentItem in (JArray)contentToken)
+                                        {
+                                            if (contentItem == null || contentItem.Type != JTokenType.Object)
+                                            {
+                                                continue;
+                                            }
+
+                                            var textValue = (string)contentItem[&quot;text&quot;] ?? (string)contentItem[&quot;output_text&quot;];
+                                            if (!String.IsNullOrEmpty(textValue))
+                                            {
+                                                outputParts.Add(textValue);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (outputParts.Count &gt; 0)
+                                {
+                                    responseText = String.Join(&quot;\n\n&quot;, outputParts);
+                                }
+                            }
+                            else if (bodyObject[&quot;error&quot;] != null)
+                            {
+                                responseText = bodyObject[&quot;error&quot;].ToString(Formatting.None);
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        return responseBody;
+                    }
+
+                    return responseText;
+                }" />
+                <set-variable name="responseContentOriginalChars" value="@((context.Variables.GetValueOrDefault&lt;string&gt;(&quot;responseContentRaw&quot;, string.Empty)).Length)" />
+                <set-variable name="responseContentWasTruncated" value="@((context.Variables.GetValueOrDefault&lt;string&gt;(&quot;responseContentRaw&quot;, string.Empty)).Length &gt; context.Variables.GetValueOrDefault&lt;int&gt;(&quot;contentCaptureMaxChars&quot;, 32000))" />
+                <set-variable name="responseContentForTrace" value="@{
+                    var content = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;responseContentRaw&quot;, string.Empty);
+                    var maxChars = context.Variables.GetValueOrDefault&lt;int&gt;(&quot;contentCaptureMaxChars&quot;, 32000);
+                    return content.Length &gt; maxChars
+                        ? content.Substring(0, maxChars) + &quot;\n...[truncated by APIM content logging policy]&quot;
+                        : content;
+                }" />
+                <trace source="AzureOpenAIContentCapture" severity="information">
+                    <message>@(context.Variables.GetValueOrDefault&lt;string&gt;(&quot;responseContentForTrace&quot;, string.Empty))</message>
+                    <metadata name="ContentLogging" value="true" />
+                    <metadata name="CapturePhase" value="outbound-response" />
+                    <metadata name="APIMRequestId" value="@(context.RequestId.ToString())" />
+                    <metadata name="DeploymentId" value="@(context.Variables.GetValueOrDefault&lt;string&gt;(&quot;deploymentId&quot;, &quot;unknown&quot;))" />
+                    <metadata name="EndUserId" value="@(context.Variables.GetValueOrDefault&lt;string&gt;(&quot;observedEndUserId&quot;, &quot;unknown&quot;))" />
+                    <metadata name="StreamRequested" value="false" />
+                    <metadata name="OriginalChars" value="@(context.Variables.GetValueOrDefault&lt;int&gt;(&quot;responseContentOriginalChars&quot;, 0).ToString())" />
+                    <metadata name="Truncated" value="@(context.Variables.GetValueOrDefault&lt;bool&gt;(&quot;responseContentWasTruncated&quot;, false).ToString())" />
+                </trace>
+            </when>
+            <otherwise>
+                <trace source="AzureOpenAIContentCapture" severity="information">
+                    <message>Streaming response requested. Outbound response content capture was skipped to avoid buffering the stream in APIM.</message>
+                    <metadata name="ContentLogging" value="true" />
+                    <metadata name="CapturePhase" value="outbound-response-skipped" />
+                    <metadata name="APIMRequestId" value="@(context.RequestId.ToString())" />
+                    <metadata name="DeploymentId" value="@(context.Variables.GetValueOrDefault&lt;string&gt;(&quot;deploymentId&quot;, &quot;unknown&quot;))" />
+                    <metadata name="EndUserId" value="@(context.Variables.GetValueOrDefault&lt;string&gt;(&quot;observedEndUserId&quot;, &quot;unknown&quot;))" />
+                    <metadata name="StreamRequested" value="true" />
+                    <metadata name="OriginalChars" value="0" />
+                    <metadata name="Truncated" value="false" />
+                </trace>
+            </otherwise>
+        </choose>
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>

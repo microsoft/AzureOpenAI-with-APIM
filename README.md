@@ -405,13 +405,17 @@ New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFil
 
 ## Azure OpenAI token count per subscription
 
-TBD
+Use the following assets to extend token tracking from the APIM subscription level down to the application end user when APIM sits behind another application:
 
-Policy for collecting tokens and user id
+- [Forwarded end-user tracking policy](./apim_policies/AOAI_Policy-Token_Tracking_End_User_Context.xml)
+- [End-user context tracking guide](./apim_policies/END_USER_CONTEXT_TRACKING.md)
+- [Sample KQL query by forwarded end user](./kql_queries/KQL-Token_Tracking_by_End_User.kql)
+
+The sample policy keeps the current token limiting pattern, emits custom dimensions for `End User ID`, `End User Tenant ID`, `Client Application ID`, and `Identity Source`, and only uses the APIM subscription as the token counter when it exists. When the API is called without an APIM subscription, the policy falls back to a counter key derived from forwarded identity data.
 
 ### Log Analytics workspace
 
-TBD
+Use [Sample KQL query by forwarded end user](./kql_queries/KQL-Token_Tracking_by_End_User.kql) to break usage down by the forwarded application and user identity.
 
 ### Event Hub
 
@@ -424,6 +428,16 @@ TBD
 #### Demo
 
 TBD
+
+## Azure OpenAI prompt and response logging
+
+Use the following assets to capture inbound prompt content and outbound model response content from APIM into Application Insights and Log Analytics:
+
+- [Prompt and response content capture policy](./apim_policies/AOAI_Policy-Trace_Prompt_Response_Content.xml)
+- [Prompt and response logging guide](./apim_policies/PROMPT_RESPONSE_CONTENT_LOGGING.md)
+- [Sample KQL queries for content traces](./kql_queries/KQL-Prompt_Response_Content_Logging.kql)
+
+This sample uses the APIM `trace` policy, not payload-byte diagnostics alone. It captures readable prompt and response content into `AppTraces`, records correlation metadata such as `APIMRequestId` and `DeploymentId`, and intentionally skips outbound body capture for streaming requests.
 
 ## Resiliency
 
@@ -458,6 +472,8 @@ TBD
 - Provide cost management per subscription
 
 To effectively manage the costs associated with Azure OpenAI Service usage, you can implement policies in Azure API Management (APIM) that control and monitor the number of tokens consumed by each request. By limiting tokens per subscription and emitting detailed metrics, you can enforce usage quotas, prevent overuse, and enable charge-back models for cost recovery.
+
+If your callers are applications acting on behalf of signed-in users, use [AOAI_Policy-Token_Tracking_End_User_Context.xml](./apim_policies/AOAI_Policy-Token_Tracking_End_User_Context.xml) together with [END_USER_CONTEXT_TRACKING.md](./apim_policies/END_USER_CONTEXT_TRACKING.md) to forward application and end-user identity into the emitted token metrics.
 
 ### Implementing Token Limits and Metrics Emission
 

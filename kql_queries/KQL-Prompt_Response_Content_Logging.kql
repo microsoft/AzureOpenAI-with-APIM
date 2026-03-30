@@ -1,0 +1,52 @@
+// Recent prompt and response content traces from APIM
+AppTraces
+| where tostring(Properties["ContentLogging"]) == "true"
+| extend
+    Phase = tostring(Properties["CapturePhase"]),
+    RequestId = tostring(Properties["APIMRequestId"]),
+    DeploymentId = tostring(Properties["DeploymentId"]),
+    EndUserId = tostring(Properties["EndUserId"]),
+    StreamRequested = tostring(Properties["StreamRequested"]),
+    Truncated = tostring(Properties["Truncated"]),
+    OriginalChars = toint(Properties["OriginalChars"])
+| project TimeGenerated, Phase, RequestId, DeploymentId, EndUserId, StreamRequested, Truncated, OriginalChars, Message, OperationId
+| order by TimeGenerated desc
+
+// Pair prompt and response traces for the same APIM request
+let contentLogs = AppTraces
+| where tostring(Properties["ContentLogging"]) == "true"
+| extend
+    Phase = tostring(Properties["CapturePhase"]),
+    RequestId = tostring(Properties["APIMRequestId"]),
+    DeploymentId = tostring(Properties["DeploymentId"]),
+    EndUserId = tostring(Properties["EndUserId"]),
+    StreamRequested = tostring(Properties["StreamRequested"])
+| project TimeGenerated, Phase, RequestId, DeploymentId, EndUserId, StreamRequested, Message, OperationId;
+contentLogs
+| summarize
+    Messages = make_bag(pack(Phase, Message)),
+    FirstSeen = min(TimeGenerated),
+    LastSeen = max(TimeGenerated),
+    DeploymentId = take_any(DeploymentId),
+    EndUserId = take_any(EndUserId),
+    StreamRequested = take_any(StreamRequested)
+    by RequestId, OperationId
+| project
+    LastSeen,
+    RequestId,
+    OperationId,
+    DeploymentId,
+    EndUserId,
+    StreamRequested,
+    RequestPrompt = tostring(Messages["inbound-request"]),
+    ModelResponse = tostring(Messages["outbound-response"]),
+    SkippedResponseNotice = tostring(Messages["outbound-response-skipped"])
+| order by LastSeen desc
+
+// Search prompt or response content for a keyword
+AppTraces
+| where tostring(Properties["ContentLogging"]) == "true"
+| where Message has "replace-with-keyword"
+| extend Phase = tostring(Properties["CapturePhase"]), RequestId = tostring(Properties["APIMRequestId"]), DeploymentId = tostring(Properties["DeploymentId"]), EndUserId = tostring(Properties["EndUserId"])
+| project TimeGenerated, Phase, RequestId, DeploymentId, EndUserId, Message
+| order by TimeGenerated desc

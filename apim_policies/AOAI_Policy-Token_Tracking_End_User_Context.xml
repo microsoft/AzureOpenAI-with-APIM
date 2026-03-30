@@ -1,0 +1,170 @@
+<policies>
+    <inbound>
+        <set-backend-service id="apim-generated-policy" backend-id="azure-openai-openai-endpoint" />
+        <set-variable name="deploymentId" value="@(context.Request.Url.Path.Split('/').ElementAtOrDefault(3))" />
+        <set-variable name="forwardedIdentityToken" value="@{
+            var token = context.Request.Headers.GetValueOrDefault(&quot;x-apim-end-user-jwt&quot;, string.Empty);
+            if (String.IsNullOrEmpty(token))
+            {
+                token = context.Request.Headers.GetValueOrDefault(&quot;Authorization&quot;, string.Empty);
+            }
+            if (String.IsNullOrEmpty(token))
+            {
+                return String.Empty;
+            }
+
+            token = token.Trim();
+            if (token.StartsWith(&quot;Bearer &quot;, StringComparison.OrdinalIgnoreCase))
+            {
+                token = token.Substring(7).Trim();
+            }
+
+            return token;
+        }" />
+        <set-variable name="forwardedEndUserId" value="@{
+            var userId = context.Request.Headers.GetValueOrDefault(&quot;x-apim-end-user-id&quot;, string.Empty);
+            if (!String.IsNullOrEmpty(userId))
+            {
+                return userId;
+            }
+
+            var token = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;forwardedIdentityToken&quot;, string.Empty);
+            if (String.IsNullOrEmpty(token))
+            {
+                return &quot;unknown&quot;;
+            }
+
+            var jwt = token.AsJwt();
+            if (jwt == null)
+            {
+                return &quot;unknown&quot;;
+            }
+
+            userId = jwt.Claims.GetValueOrDefault(&quot;oid&quot;, string.Empty);
+            if (!String.IsNullOrEmpty(userId))
+            {
+                return userId;
+            }
+
+            userId = jwt.Claims.GetValueOrDefault(&quot;sub&quot;, string.Empty);
+            return !String.IsNullOrEmpty(userId) ? userId : &quot;unknown&quot;;
+        }" />
+        <set-variable name="forwardedEndUserTenantId" value="@{
+            var tenantId = context.Request.Headers.GetValueOrDefault(&quot;x-apim-end-user-tenant-id&quot;, string.Empty);
+            if (!String.IsNullOrEmpty(tenantId))
+            {
+                return tenantId;
+            }
+
+            var token = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;forwardedIdentityToken&quot;, string.Empty);
+            if (String.IsNullOrEmpty(token))
+            {
+                return &quot;unknown&quot;;
+            }
+
+            var jwt = token.AsJwt();
+            if (jwt == null)
+            {
+                return &quot;unknown&quot;;
+            }
+
+            tenantId = jwt.Claims.GetValueOrDefault(&quot;tid&quot;, string.Empty);
+            return !String.IsNullOrEmpty(tenantId) ? tenantId : &quot;unknown&quot;;
+        }" />
+        <set-variable name="clientApplicationId" value="@{
+            var clientApplicationId = context.Request.Headers.GetValueOrDefault(&quot;x-apim-client-application-id&quot;, string.Empty);
+            if (!String.IsNullOrEmpty(clientApplicationId))
+            {
+                return clientApplicationId;
+            }
+
+            var token = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;forwardedIdentityToken&quot;, string.Empty);
+            if (String.IsNullOrEmpty(token))
+            {
+                return &quot;unknown&quot;;
+            }
+
+            var jwt = token.AsJwt();
+            if (jwt == null)
+            {
+                return &quot;unknown&quot;;
+            }
+
+            clientApplicationId = jwt.Claims.GetValueOrDefault(&quot;azp&quot;, string.Empty);
+            if (!String.IsNullOrEmpty(clientApplicationId))
+            {
+                return clientApplicationId;
+            }
+
+            clientApplicationId = jwt.Claims.GetValueOrDefault(&quot;appid&quot;, string.Empty);
+            if (!String.IsNullOrEmpty(clientApplicationId))
+            {
+                return clientApplicationId;
+            }
+
+            clientApplicationId = jwt.Claims.GetValueOrDefault(&quot;client_id&quot;, string.Empty);
+            return !String.IsNullOrEmpty(clientApplicationId) ? clientApplicationId : &quot;unknown&quot;;
+        }" />
+        <set-variable name="identitySource" value="@{
+            if (!String.IsNullOrEmpty(context.Request.Headers.GetValueOrDefault(&quot;x-apim-end-user-id&quot;, string.Empty))
+                || !String.IsNullOrEmpty(context.Request.Headers.GetValueOrDefault(&quot;x-apim-end-user-tenant-id&quot;, string.Empty))
+                || !String.IsNullOrEmpty(context.Request.Headers.GetValueOrDefault(&quot;x-apim-client-application-id&quot;, string.Empty)))
+            {
+                return &quot;header&quot;;
+            }
+
+            return !String.IsNullOrEmpty(context.Variables.GetValueOrDefault&lt;string&gt;(&quot;forwardedIdentityToken&quot;, string.Empty))
+                ? &quot;jwt&quot;
+                : &quot;unknown&quot;;
+        }" />
+        <set-variable name="tokenCounterKey" value="@{
+            if (context.Subscription != null &amp;&amp; !String.IsNullOrEmpty(context.Subscription.Id))
+            {
+                return &quot;subscription:&quot; + context.Subscription.Id;
+            }
+
+            var clientApplicationId = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;clientApplicationId&quot;, &quot;unknown&quot;);
+            var endUserId = context.Variables.GetValueOrDefault&lt;string&gt;(&quot;forwardedEndUserId&quot;, &quot;unknown&quot;);
+
+            if (!String.IsNullOrEmpty(clientApplicationId) &amp;&amp; clientApplicationId != &quot;unknown&quot;
+                &amp;&amp; !String.IsNullOrEmpty(endUserId) &amp;&amp; endUserId != &quot;unknown&quot;)
+            {
+                return &quot;app:&quot; + clientApplicationId + &quot;|user:&quot; + endUserId;
+            }
+
+            if (!String.IsNullOrEmpty(endUserId) &amp;&amp; endUserId != &quot;unknown&quot;)
+            {
+                return &quot;user:&quot; + endUserId;
+            }
+
+            return &quot;ip:&quot; + context.Request.IpAddress;
+        }" />
+        <azure-openai-token-limit tokens-per-minute="10000000" counter-key="@(context.Variables.GetValueOrDefault&lt;string&gt;(&quot;tokenCounterKey&quot;, context.Request.IpAddress))" estimate-prompt-tokens="true" tokens-consumed-header-name="consumed-tokens" remaining-tokens-header-name="remaining-tokens" />
+        <azure-openai-emit-token-metric>
+            <dimension name="API ID" />
+            <dimension name="Subscription ID" />
+            <dimension name="User ID" />
+            <dimension name="Product ID" />
+            <dimension name="Deployment ID" value="@(context.Variables.GetValueOrDefault&lt;string&gt;(&quot;deploymentId&quot;, &quot;unknown&quot;))" />
+            <dimension name="End User ID" value="@(context.Variables.GetValueOrDefault&lt;string&gt;(&quot;forwardedEndUserId&quot;, &quot;unknown&quot;))" />
+            <dimension name="End User Tenant ID" value="@(context.Variables.GetValueOrDefault&lt;string&gt;(&quot;forwardedEndUserTenantId&quot;, &quot;unknown&quot;))" />
+            <dimension name="Client Application ID" value="@(context.Variables.GetValueOrDefault&lt;string&gt;(&quot;clientApplicationId&quot;, &quot;unknown&quot;))" />
+            <dimension name="Identity Source" value="@(context.Variables.GetValueOrDefault&lt;string&gt;(&quot;identitySource&quot;, &quot;unknown&quot;))" />
+        </azure-openai-emit-token-metric>
+        <set-header name="x-apim-end-user-id" exists-action="delete" />
+        <set-header name="x-apim-end-user-tenant-id" exists-action="delete" />
+        <set-header name="x-apim-client-application-id" exists-action="delete" />
+        <set-header name="x-apim-end-user-jwt" exists-action="delete" />
+        <authentication-managed-identity resource="https://cognitiveservices.azure.com/" />
+        <base />
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>

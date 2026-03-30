@@ -1,0 +1,19 @@
+customMetrics
+| where name != "_APPRESOURCEPREVIEW_"
+| where name in ("Prompt Tokens", "Completion Tokens", "Total Tokens")
+| where isnotempty(tostring(customDimensions['End User ID']))
+| extend
+    subscriptionId = tostring(customDimensions['Subscription ID']),
+    apimUserId = tostring(customDimensions['User ID']),
+    endUserId = tostring(customDimensions['End User ID']),
+    endUserTenantId = tostring(customDimensions['End User Tenant ID']),
+    clientApplicationId = tostring(customDimensions['Client Application ID']),
+    identitySource = tostring(customDimensions['Identity Source']),
+    deploymentId = tostring(customDimensions['Deployment ID']),
+    tokens = toreal(value)
+| summarize
+    promptTokens = sumif(tokens, name == "Prompt Tokens"),
+    completionTokens = sumif(tokens, name == "Completion Tokens"),
+    totalTokens = sumif(tokens, name == "Total Tokens")
+    by endUserId, endUserTenantId, clientApplicationId, identitySource, subscriptionId, apimUserId, deploymentId
+| order by totalTokens desc
